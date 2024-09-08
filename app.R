@@ -22,7 +22,7 @@ ui <- list(
     skin = "blue",
     ### Create the app header ----
     dashboardHeader(
-      title = "App Template", # You may use a shortened form of the title here
+      title = "Bivariate Continuous", # You may use a shortened form of the title here
       titleWidth = 250,
       tags$li(class = "dropdown", actionLink("info", icon("info"))),
       tags$li(
@@ -111,51 +111,47 @@ ui <- list(
           tabName = "prerequisites",
           withMathJax(),
           h2("Prerequisites"),
-          p("In order to get the most out of this app, please review the
-            following:"),
-          tags$ul(
-            tags$li("Pre-req 1--Technical/Conceptual Prerequisites are ideas that
-                    users need to have in order to engage with your app fully."),
-            tags$li("Pre-req 2--Contextual Prerequisites refer to any information
-                    about a context in your app that will enrich a user's
-                    understandings."),
-            tags$li("Pre-req 3"),
-            tags$li("Pre-req 4")
-          ),
-          p("Notice the use of an unordered list; users can move through the
-            list any way they wish."),
+          p("fill description in later"),
+          br(),
           box(
-            title = strong("Null Hypothesis Significance Tests (NHSTs)"),
+            title = strong("Basic Distribution Information"),
             status = "primary",
             collapsible = TRUE,
             collapsed = TRUE,
             width = '100%',
-            "In the Confirmatory Data Analysis tradition, null hypothesis
-            significance tests serve as a critical tool to confirm that a
-            particular theoretical model describes our data and to make a
-            generalization from our sample to the broader population
-            (i.e., make an inference). The null hypothesis often reflects the
-            simpler of two models (e.g., 'no statistical difference',
-            'there is an additive difference of 1', etc.) that we will use to
-            build a sampling distribution for our chosen estimator. These
-            methods let us test whether our sample data are consistent with this
-            simple model (null hypothesis)."
+            "fill in later"
           ),
           box(
-            title = strong(tags$em("p"), "-values"),
+            title = strong("Marginal Distributions"),
             status = "primary",
             collapsible = TRUE,
-            collapsed = FALSE,
+            collapsed = TRUE,
             width = '100%',
-            "The probability that our selected estimator takes on a value at
-            least as extreme as what we observed given our null hypothesis. If
-            we were to carry out our study infinitely many times and the null
-            hypothesis accurately modeled what we're studying, then we would
-            expect for our estimator to produce a value at least as extreme as
-            what we have seen 100*(p-value)% of the time. The larger the
-            p-value, the more often we would expect our estimator to take on a
-            value at least as extreme as what we've seen; the smaller, the less
-            often."
+            "fill in later"
+          ),
+          box(
+            title = strong("Joint Distributions"),
+            status = "primary",
+            collapsible = TRUE,
+            collapsed = TRUE,
+            width = '100%',
+            "fill in later"
+          ),
+          box(
+            title = strong("Conditional Distributions"),
+            status = "primary",
+            collapsible = TRUE,
+            collapsed = TRUE,
+            width = '100%',
+            "fill in later"
+          ),
+          box(
+            title = strong("Additional Topics"),
+            status = "primary",
+            collapsible = TRUE,
+            collapsed = TRUE,
+            width = '100%',
+            "fill in later"
           )
         ),
         #### Note: you must have at least one of the following pages. You might
@@ -166,40 +162,48 @@ ui <- list(
           tabName = "explore1",
           withMathJax(),
           h2("Joint vs Marginal PDFs"),
-          br(),
-          p(tags$strong("Standard Normally Distributed 3d Density Graph")),
-          fluidRow(
-            column(
-              width = 8,
-              uiOutput("normPlot")
-            )
-          ),
-          br(),
-          br(),
-          p(tags$strong("Normal Graph w/ Correlation + Contour Map")),
-          fluidRow(
-            column(
-              width = 6,
-              uiOutput("corrPlot")
+          tabsetPanel(
+            type = "tabs",
+            tabPanel(
+              title = "Standard Normal",
+              br(),
+              p(tags$strong("Standard Normally Distributed 3d Density Graph")),
+              fluidRow(
+                column(
+                  width = 8,
+                  uiOutput("normPlot")
+                )
+              )
             ),
-            column(
-              width = 6,
-              plotOutput("contourMap")
-            )
-          ),
-          br(),
-          fluidRow(
-            column(
-              width = 6,
-              wellPanel(
-                sliderInput(
-                  inputId = 'correlationSlider',
-                  label = 'Adjust the slider to change the correlation value p',
-                  min = -0.9,
-                  max = 0.9,
-                  value = 0,
-                  step = 0.01
-                ))
+            tabPanel(
+              title = "Normal With Correlation Value",
+              br(),
+              p(tags$strong("Normal Graph w/ Correlation + Contour Map")),
+              fluidRow(
+                column(
+                  width = 6,
+                  uiOutput("corrPlot")
+                ),
+                column(
+                  width = 6,
+                  plotOutput("contourMap")
+                )
+              ),
+              br(),
+              fluidRow(
+                column(
+                  width = 6,
+                  wellPanel(
+                    sliderInput(
+                      inputId = 'correlationSlider',
+                      label = 'Adjust the slider to change the correlation value p',
+                      min = -0.9,
+                      max = 0.9,
+                      value = 0,
+                      step = 0.01
+                    ))
+                )
+              )
             )
           )
         ),
@@ -208,59 +212,67 @@ ui <- list(
           tabName = "explore2",
           withMathJax(),
           h2("Conditioning"),
-          br(),
-          p(tags$strong("Working with Conditional Plane (Std. Norm)")),
-          fluidRow(
-            column(
-              width = 6,
-              uiOutput("condPlot3d")
+          tabsetPanel(
+            type = "tabs",
+            tabPanel(
+              title = "Standard Normal",
+              br(),
+              p(tags$strong("Working with Conditional Plane (Std. Norm)")),
+              fluidRow(
+                column(
+                  width = 6,
+                  uiOutput("condPlot3d")
+                ),
+                column(
+                  width = 6,
+                  plotOutput('condPlane')
+                )
+              ),
+              br(),
+              fluidRow(
+                column(
+                  width = 6,
+                  wellPanel(
+                    sliderInput(
+                      inputId = 'condSlider',
+                      label = 'Adjust the slider to move the positioning of the conditional plane',
+                      min = -2.5,
+                      max = 2.5,
+                      value = 0,
+                      step = 0.1
+                    ))
+                )
+              )
             ),
-            column(
-              width = 6,
-              plotOutput('condPlane')
-            )
-          ),
-          br(),
-          fluidRow(
-            column(
-              width = 6,
-              wellPanel(
-                sliderInput(
-                  inputId = 'condSlider',
-                  label = 'Adjust the slider to move the positioning of the conditional plane',
-                  min = -2.5,
-                  max = 2.5,
-                  value = 0,
-                  step = 0.1
-                ))
-            )
-          ),
-          br(),
-          br(),
-          p(tags$strong("Conditional Plane w/ Correlation Value (p = 0.7)")),
-          fluidRow(
-            column(
-              width = 6,
-              uiOutput("condCorr")
-            ),
-            column(
-              width = 6,
-              plotOutput('condCorrPlane')
-            )
-          ),
-          br(),
-          fluidRow(
-            column(
-              width = 6,
-              wellPanel(
-                sliderInput(
-                  inputId = 'condSlider2',
-                  label = 'Adjust the slider to move the positioning of the conditional plane',
-                  min = -2.5,
-                  max = 2.5,
-                  value = 0,
-                  step = 0.1
-                ))
+            tabPanel(
+              title = "Normal With Correlation Value",
+              br(),
+              p(tags$strong("Conditional Plane w/ Correlation Value (p = 0.7)")),
+              fluidRow(
+                column(
+                  width = 6,
+                  uiOutput("condCorr")
+                ),
+                column(
+                  width = 6,
+                  plotOutput('condCorrPlane')
+                )
+              ),
+              br(),
+              fluidRow(
+                column(
+                  width = 6,
+                  wellPanel(
+                    sliderInput(
+                      inputId = 'condSlider2',
+                      label = 'Adjust the slider to move the positioning of the conditional plane',
+                      min = -2.5,
+                      max = 2.5,
+                      value = 0,
+                      step = 0.1
+                    ))
+                )
+              )
             )
           )
         ),
@@ -314,6 +326,7 @@ server <- function(input, output, session) {
     }
   )
   
+  
   ## Create Explore Page Graphs ----
   
   # create standard norm functions
@@ -348,10 +361,12 @@ server <- function(input, output, session) {
            modeBarButtonsToRemove = list('orbitRotation', 'tableRotation', 'pan3d', 'resetCameraLastSave3d', 'toImage'))
   })
   
+  
   # create correlated pdf function and grid
   corr_joint <- function(x,y,p) {
     (1 / ((2 * pi) * sqrt(1-p^2))) * exp(-0.5 * (x^2 + y^2 - 2*p * x * y) / (1-p^2))
   }
+  
   
   #### normal dist. w/ correlation value ----
   output$corrPlot <- renderUI({
@@ -370,6 +385,7 @@ server <- function(input, output, session) {
     filled.contour(x,y,corr_z, asp = 1, color.palette = viridis,
                    plot.title = title(main = "Contour Map", xlab = 'x', ylab = 'y'))
   })
+  
   
   
   #### conditional plot w/ plane ----
@@ -408,6 +424,7 @@ server <- function(input, output, session) {
       geom_line()
     ggplotObj
   })
+  
   
   
   
