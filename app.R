@@ -68,12 +68,14 @@ ui <- list(
             want to have this page catch attention and describe (in general terms)
             what the user can do in the rest of the app."),
           h2("Instructions"),
-          p("This information will change depending on what you want to do."),
           tags$ol(
             tags$li("Review any prerequiste ideas using the Prerequistes tab."),
-            tags$li("Explore the Exploration Tab."),
-            tags$li("Challenge yourself."),
-            tags$li("Play the game to test how far you've come.")
+            tags$li("Explore the Joint vs Marginal tab to work with interactive 3D
+                    graphs of the joint and marginal PDFs."),
+            tags$li("Continue on to the Conditioning tab to explore representations
+                    of conditional and joint PDFs to see how they compare."),
+            tags$li("Test your knowledge on the Challenge tab by answering questions
+                    about material involving joint, marginal, and conditional distributions.")
           ),
           ##### Go Button--location will depend on your goals
           div(
@@ -103,7 +105,7 @@ ui <- list(
             citeApp(),
             br(),
             br(),
-            div(class = "updated", "Last Update: 9/1/2024 by NP.")
+            div(class = "updated", "Last Update: 9/9/2024 by NP.")
           )
         ),
         #### Set up the Prerequisites Page ----
@@ -172,6 +174,16 @@ ui <- list(
                 column(
                   width = 8,
                   uiOutput("normPlot")
+                ),
+                bsButton(
+                  inputId = "marg_y", 
+                  label = "Marginal View of Y", 
+                  size = "large"
+                ),
+                bsButton(
+                  inputId = "marg_x", 
+                  label = "Marginal View of X", 
+                  size = "large"
                 )
               )
             ),
@@ -281,13 +293,10 @@ ui <- list(
           tabName = "challenge",
           withMathJax(),
           h2("Challenge Yourself"),
-          p("The general intent of a Challenge page is to have the user take
-            what they learned in an Exploration and apply that knowledge in new
-            contexts/situations. In essence, to have them challenge their
-            understanding by testing themselves."),
-          p("What this page looks like will be up to you. Something you might
-            consider is to re-create the tools of the Exploration page and then
-            a list of questions for the user to then answer.")
+          p("This page will have single questions and the user can move onto
+            the next level when they get it right (instead of having one large quiz).
+            I think the challenge will consist of maybe five questions from a question
+            bank of maybe ten or so general questions.")
         ),
         #### Set up the References Page ----
         tabItem(
@@ -350,8 +359,7 @@ server <- function(input, output, session) {
       layout(scene = list(
         zaxis = list(title = "Density", hoverformat = '.3f'),
         xaxis = list(hoverformat = '.3f', tickvals = seq(-4,4,by = 2), ticktext = as.character(seq(-4,4,by = 2))),
-        yaxis = list(hoverformat = '.3f', tickvals = seq(-4,4,by = 2), ticktext = as.character(seq(-4,4,by = 2))),
-        camera = list(eye = list(x = -2.25, y = 0, z = 0))
+        yaxis = list(hoverformat = '.3f', tickvals = seq(-4,4,by = 2), ticktext = as.character(seq(-4,4,by = 2)))
       ),
       dragmode = FALSE) %>%
       # add marginal paths and scale
@@ -360,6 +368,49 @@ server <- function(input, output, session) {
     config(plotlyObj, displaylogo = FALSE, displayModeBar = TRUE,
            modeBarButtonsToRemove = list('orbitRotation', 'tableRotation', 'pan3d', 'resetCameraLastSave3d', 'toImage'))
   })
+  
+  # change views based on button clicking
+  # marginal of y view
+  observeEvent(
+    eventExpr = input$marg_y, 
+    handlerExpr = {
+      output$normPlot <- renderUI({
+        plotlyObj <- plot_ly(x = x, y = y, z = z, type = 'surface', hoverinfo = 'x+y+z+text', hovertext = "Joint PDF") %>%
+          layout(scene = list(
+            zaxis = list(title = "Density", hoverformat = '.3f'),
+            xaxis = list(hoverformat = '.3f', tickvals = seq(-4,4,by = 2), ticktext = as.character(seq(-4,4,by = 2))),
+            yaxis = list(hoverformat = '.3f', tickvals = seq(-4,4,by = 2), ticktext = as.character(seq(-4,4,by = 2))),
+            camera = list(eye = list(x = -2.25, y = 0, z = 0))
+          ),
+          dragmode = FALSE) %>%
+          # add marginal paths and scale
+          add_paths(x = x, y = -4, z = (1 / sqrt(2 * pi)) * marg(x), hovertext = "Marginal PDF of X", name = 'Marginal PDF of X', line = list(color = 'black')) %>%
+          add_paths(x = -4, y = y, z = (1 / sqrt(2 * pi)) * marg(y), hovertext = "Marginal PDF of Y", name = 'Marginal PDF of Y', line = list(color = 'black'))
+        config(plotlyObj, displaylogo = FALSE, displayModeBar = TRUE,
+               modeBarButtonsToRemove = list('orbitRotation', 'tableRotation', 'pan3d', 'resetCameraLastSave3d', 'toImage'))
+      })
+    })
+  
+  # marginal of x view
+  observeEvent(
+    eventExpr = input$marg_x, 
+    handlerExpr = {
+      output$normPlot <- renderUI({
+        plotlyObj <- plot_ly(x = x, y = y, z = z, type = 'surface', hoverinfo = 'x+y+z+text', hovertext = "Joint PDF") %>%
+          layout(scene = list(
+            zaxis = list(title = "Density", hoverformat = '.3f'),
+            xaxis = list(hoverformat = '.3f', tickvals = seq(-4,4,by = 2), ticktext = as.character(seq(-4,4,by = 2))),
+            yaxis = list(hoverformat = '.3f', tickvals = seq(-4,4,by = 2), ticktext = as.character(seq(-4,4,by = 2))),
+            camera = list(eye = list(x = 0, y = -2.25, z = 0))
+          ),
+          dragmode = FALSE) %>%
+          # add marginal paths and scale
+          add_paths(x = x, y = -4, z = (1 / sqrt(2 * pi)) * marg(x), hovertext = "Marginal PDF of X", name = 'Marginal PDF of X', line = list(color = 'black')) %>%
+          add_paths(x = -4, y = y, z = (1 / sqrt(2 * pi)) * marg(y), hovertext = "Marginal PDF of Y", name = 'Marginal PDF of Y', line = list(color = 'black'))
+        config(plotlyObj, displaylogo = FALSE, displayModeBar = TRUE,
+               modeBarButtonsToRemove = list('orbitRotation', 'tableRotation', 'pan3d', 'resetCameraLastSave3d', 'toImage'))
+      })
+    })
   
   
   # create correlated pdf function and grid
