@@ -124,6 +124,15 @@ ui <- list(
             "fill in later"
           ),
           box(
+            title = strong("Distribution Notation"),
+            status = "primary",
+            collapsible = TRUE,
+            collapsed = TRUE,
+            width = '100%',
+            "Here I can explain basic notation like e[X] = ... and 
+            var[X] = ... etc."
+          ),
+          box(
             title = strong("Marginal Distributions"),
             status = "primary",
             collapsible = TRUE,
@@ -167,9 +176,9 @@ ui <- list(
           tabsetPanel(
             type = "tabs",
             tabPanel(
-              title = "Standard Normal",
+              title = "Independent Normal",
               br(),
-              p(tags$strong("Standard Normally Distributed 3d Density Graph")),
+              p(tags$strong("Independent Normally Distributed 3d Density Graph")),
               fluidRow(
                 column(
                   width = 8,
@@ -224,67 +233,43 @@ ui <- list(
           tabName = "explore2",
           withMathJax(),
           h2("Conditioning"),
-          tabsetPanel(
-            type = "tabs",
-            tabPanel(
-              title = "Standard Normal",
-              br(),
-              p(tags$strong("Working with Conditional Plane (Std. Norm)")),
-              fluidRow(
-                column(
-                  width = 6,
-                  uiOutput("condPlot3d")
-                ),
-                column(
-                  width = 6,
-                  plotOutput('condPlane')
-                )
-              ),
-              br(),
-              fluidRow(
-                column(
-                  width = 6,
-                  wellPanel(
-                    sliderInput(
-                      inputId = 'condSlider',
-                      label = 'Adjust the slider to move the positioning of the conditional plane',
-                      min = -2.5,
-                      max = 2.5,
-                      value = 0,
-                      step = 0.1
-                    ))
-                )
-              )
+          h3("Independent Normal"),
+          p(tags$strong("Conditional Plane w/ Correlation Value (p = 0.7)")),
+          fluidRow(
+            column(
+              width = 6,
+              uiOutput("condCorr")
             ),
-            tabPanel(
-              title = "Normal With Correlation Value",
-              br(),
-              p(tags$strong("Conditional Plane w/ Correlation Value (p = 0.7)")),
-              fluidRow(
-                column(
-                  width = 6,
-                  uiOutput("condCorr")
-                ),
-                column(
-                  width = 6,
-                  plotOutput('condCorrPlane')
-                )
-              ),
-              br(),
-              fluidRow(
-                column(
-                  width = 6,
-                  wellPanel(
-                    sliderInput(
-                      inputId = 'condSlider2',
-                      label = 'Adjust the slider to move the positioning of the conditional plane',
-                      min = -2.5,
-                      max = 2.5,
-                      value = 0,
-                      step = 0.1
-                    ))
-                )
-              )
+            column(
+              width = 6,
+              plotOutput('condCorrPlane')
+            )
+          ),
+          br(),
+          fluidRow(
+            column(
+              width = 6,
+              wellPanel(
+                sliderInput(
+                  inputId = 'corrVal',
+                  label = 'Adjust the slider to change the correlation value',
+                  min = -0.9,
+                  max = 0.9,
+                  value = 0,
+                  step = 0.01
+                ))
+            ),
+            column(
+              width = 6,
+              wellPanel(
+                sliderInput(
+                  inputId = 'condSliderPos',
+                  label = 'Adjust the slider to move the positioning of the conditional plane',
+                  min = -2.5,
+                  max = 2.5,
+                  value = 0,
+                  step = 0.1
+                ))
             )
           )
         ),
@@ -338,7 +323,7 @@ server <- function(input, output, session) {
   
   ## Create Explore Page Graphs ----
   
-  # create standard norm functions
+  # create independent norm functions
   joint_normal <- function(x,y) {
     (1 / (2 * pi)) * exp(-0.5 * (x^2 + y^2))
   }
@@ -380,7 +365,7 @@ server <- function(input, output, session) {
             zaxis = list(title = "Density", hoverformat = '.3f'),
             xaxis = list(hoverformat = '.3f', tickvals = seq(-4,4,by = 2), ticktext = as.character(seq(-4,4,by = 2))),
             yaxis = list(hoverformat = '.3f', tickvals = seq(-4,4,by = 2), ticktext = as.character(seq(-4,4,by = 2))),
-            camera = list(eye = list(x = -2.25, y = 0, z = 0))
+            camera = list(eye = list(x = -2.25, y = 0, z = -0.5))
           ),
           dragmode = FALSE) %>%
           # add marginal paths and scale
@@ -401,7 +386,7 @@ server <- function(input, output, session) {
             zaxis = list(title = "Density", hoverformat = '.3f'),
             xaxis = list(hoverformat = '.3f', tickvals = seq(-4,4,by = 2), ticktext = as.character(seq(-4,4,by = 2))),
             yaxis = list(hoverformat = '.3f', tickvals = seq(-4,4,by = 2), ticktext = as.character(seq(-4,4,by = 2))),
-            camera = list(eye = list(x = 0, y = -2.25, z = 0))
+            camera = list(eye = list(x = 0, y = -2.25, z = -0.5))
           ),
           dragmode = FALSE) %>%
           # add marginal paths and scale
@@ -438,51 +423,10 @@ server <- function(input, output, session) {
   })
   
   
-  
-  #### conditional plot w/ plane ----
-  output$condPlot3d <- renderUI({
-    plotlyObj <- plot_ly(x = x, y = y, z = z, type = 'surface', showscale = FALSE, opacity = 0, colorscale = list(c(0, 1), c(boastPalette[8], boastPalette[8])),
-                         hoverinfo = 'x+y+z+text', hovertext = "Joint PDF") %>%
-      layout(scene = list(
-        zaxis = list(title = "Density", hoverformat = '.3f'),
-        xaxis = list(hoverformat = '.3f', tickvals = seq(-4,4,by = 2), ticktext = as.character(seq(-4,4,by = 2))),
-        yaxis = list(hoverformat = '.3f', tickvals = seq(-4,4,by = 2), ticktext = as.character(seq(-4,4,by = 2)))
-      ))
-    # create and add conditional plane
-    x_val <- matrix(input$condSlider, nrow = length(y), ncol = length(z))
-    z[z >= joint_normal(input$condSlider, y)] <- NA
-    plotlyObj <- plotlyObj %>% add_surface(
-      x = x_val,
-      y = y,
-      z = z,
-      type = 'surface',
-      opacity = 1,
-      showscale = FALSE,
-      hovertext = "Conditional Plane")
-    # add mesh effect
-    plotlyObj <- plotlyObj %>% add_surface(x = ~x, y = ~y, opacity = 0, showscale = FALSE, 
-                                           contours = list(
-                                             x = list(show = TRUE, color = 'grey30', width = 1, start = -4, end = 4, size = 0.4),
-                                             y = list(show = TRUE, color = 'grey30', width = 1, start = -4, end = 4, size = 0.4)
-                                           ))
-  })
-  
-  # plane subplot (std. norm)
-  output$condPlane <- renderPlot({
-    cond_z <- joint_normal(input$condSlider,y) / marg(input$condSlider)
-    ggplotObj <- ggplot(data = data.frame(y = y, cond_z = cond_z), 
-                        mapping = aes(x = y, y = cond_z)) +
-      geom_line()
-    ggplotObj
-  })
-  
-  
-  
-  
   #### conditional w/ correlation ----
   output$condCorr <- renderUI({
     grid2 <- expand.grid(x = x,y = y)
-    grid2$z <- corr_joint(grid2$x, grid2$y, p = 0.7)
+    grid2$z <- corr_joint(grid2$x, grid2$y, p = input$corrVal)
     z <- matrix(grid2$z, nrow = length(x), ncol = length(y))
     plotlyObj <- plot_ly(x = x, y = y, z = z, type = 'surface', showscale = FALSE, opacity = 0, colorscale = list(c(0, 1), c(boastPalette[8], boastPalette[8])),
                          hoverinfo = 'x+y+z+text', hovertext = "Joint PDF") %>%
@@ -492,8 +436,8 @@ server <- function(input, output, session) {
         yaxis = list(hoverformat = '.3f', tickvals = seq(-4,4,by = 2), ticktext = as.character(seq(-4,4,by = 2)))
       ))
     # create and add conditional plane
-    x_val <- matrix(input$condSlider2, nrow = length(y), ncol = length(z))
-    z[z >= corr_joint(input$condSlider2, y, p = 0.7)] <- NA
+    x_val <- matrix(input$condSliderPos, nrow = length(y), ncol = length(z))
+    z[z >= corr_joint(input$condSliderPos, y, p = input$corrVal)] <- NA
     plotlyObj <- plotlyObj %>% add_surface(
       x = x_val,
       y = y,
@@ -512,7 +456,7 @@ server <- function(input, output, session) {
   
   # plane subplot (w/ correlation)
   output$condCorrPlane <- renderPlot({
-    cond_z <- corr_joint(input$condSlider2,y, p = 0.7) / marg(input$condSlider2)
+    cond_z <- corr_joint(input$condSliderPos,y, p = input$corrVal) / marg(input$condSliderPos)
     ggplotObj <- ggplot(data = data.frame(y = y, cond_z = cond_z), 
                         mapping = aes(x = y, y = cond_z)) +
       geom_line()
