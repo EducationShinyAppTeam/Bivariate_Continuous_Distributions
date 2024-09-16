@@ -63,10 +63,9 @@ ui <- list(
           tabName = "overview",
           withMathJax(),
           h1("Bivariate Continuous Distributions"), # This should be the full name.
-          p("This is a sample Shiny application for BOAST. Remember, this page
-            will act like the front page (home page) of your app. Thus you will
-            want to have this page catch attention and describe (in general terms)
-            what the user can do in the rest of the app."),
+          p("This app will explore bivariate continuous probability distributions in a real-world sense
+            by examining joint vs marginal Probability Density Functions (PDFs) along with the conditional PDF.
+            It will also explore ideas of independence and parameter adjustments to see how the PDFs respond."),
           h2("Instructions"),
           tags$ol(
             tags$li("Review any prerequiste ideas using the Prerequistes tab."),
@@ -113,7 +112,8 @@ ui <- list(
           tabName = "prerequisites",
           withMathJax(),
           h2("Prerequisites"),
-          p("fill description in later"),
+          p("Here, you can review some topics involved in bivariate continuous distributions,
+            if necessary. Simply click on the plus sign on each tab to expand it."),
           br(),
           box(
             title = strong("Basic Distribution Information"),
@@ -173,58 +173,47 @@ ui <- list(
           tabName = "explore1",
           withMathJax(),
           h2("Joint vs Marginal PDFs"),
-          tabsetPanel(
-            type = "tabs",
-            tabPanel(
-              title = "Independent Normal",
-              br(),
-              p(tags$strong("Independent Normally Distributed 3d Density Graph")),
-              fluidRow(
-                column(
-                  width = 8,
-                  uiOutput("normPlot")
-                ),
-                bsButton(
-                  inputId = "marg_y", 
-                  label = "Marginal View of Y", 
-                  size = "large"
-                ),
-                bsButton(
-                  inputId = "marg_x", 
-                  label = "Marginal View of X", 
-                  size = "large"
-                )
+          p('This explore page features the 3D joint PDF of two independent standard normal
+            random variables with some correlation value', tags$em('p'), 'that can be
+            adjusted using the slider. The joint PDF graph also features the normalized
+            marginal PDFs of each random variable. The graph on the right is a contour plot that shows
+            an aerial view of the spread of the joint distribution as the correlation slider
+            is adjusted.'),
+          fluidRow(
+            column(
+              width = 6,
+              uiOutput("normPlot")
+            ),
+            column(
+              width = 6,
+              plotOutput("contourMap")
+            )
+          ),
+          fluidRow(
+            column(
+              width = 6,
+              bsButton(
+                inputId = "marg_y", 
+                label = "Marginal View of Y", 
+                size = "large"
+              ),
+              bsButton(
+                inputId = "marg_x", 
+                label = "Marginal View of X", 
+                size = "large"
               )
             ),
-            tabPanel(
-              title = "Normal With Correlation Value",
-              br(),
-              p(tags$strong("Normal Graph w/ Correlation + Contour Map")),
-              fluidRow(
-                column(
-                  width = 6,
-                  uiOutput("corrPlot")
-                ),
-                column(
-                  width = 6,
-                  plotOutput("contourMap")
-                )
-              ),
-              br(),
-              fluidRow(
-                column(
-                  width = 6,
-                  wellPanel(
-                    sliderInput(
-                      inputId = 'correlationSlider',
-                      label = 'Adjust the slider to change the correlation value p',
-                      min = -0.9,
-                      max = 0.9,
-                      value = 0,
-                      step = 0.01
-                    ))
-                )
-              )
+            column(
+              width = 6,
+              wellPanel(
+                sliderInput(
+                  inputId = 'correlationSlider',
+                  label = 'Adjust the slider to change the correlation value p',
+                  min = -0.9,
+                  max = 0.9,
+                  value = 0,
+                  step = 0.01
+                ))
             )
           )
         ),
@@ -233,8 +222,9 @@ ui <- list(
           tabName = "explore2",
           withMathJax(),
           h2("Conditioning"),
-          h3("Independent Normal"),
-          p(tags$strong("Conditional Plane w/ Correlation Value (p = 0.7)")),
+          p("This explore page features a 3D graph of the joint PDF and a 2D graph of the conditional PDF on the right.
+            The conditional value", tags$em('p') ,"can be changed using the left slider and the position of the conditional plane (X = x)
+            can be altered with the slider on the right."),
           fluidRow(
             column(
               width = 6,
@@ -323,7 +313,7 @@ server <- function(input, output, session) {
   
   ## Create Explore Page Graphs ----
   
-  # create independent norm functions
+  # create norm functions
   joint_normal <- function(x,y) {
     (1 / (2 * pi)) * exp(-0.5 * (x^2 + y^2))
   }
@@ -331,25 +321,34 @@ server <- function(input, output, session) {
     (1 / sqrt(2 * pi)) * exp(-0.5 * x^2)
   }
   
+  # create correlated pdf function and grid
+  corr_joint <- function(x,y,p) {
+    (1 / ((2 * pi) * sqrt(1-p^2))) * exp(-0.5 * (x^2 + y^2 - 2*p * x * y) / (1-p^2))
+  }
+  
+  
   # create xy grid then expand to 3d and apply joint function
-  x <- seq(-4, 4, length.out = 50)
-  y <- seq(-4, 4, length.out = 50) 
+  x <- seq(-3, 3, length.out = 50)
+  y <- seq(-3, 3, length.out = 50) 
   grid <- expand.grid(x = x,y = y)
   grid$z <- joint_normal(grid$x, grid$y)
   z <- matrix(grid$z, nrow = length(x), ncol = length(y))
   
-  #### normal 3d plot ----
+  #### 3d plot w/ correlation----
   output$normPlot <- renderUI({
-    plotlyObj <- plot_ly(x = x, y = y, z = z, type = 'surface', hoverinfo = 'x+y+z+text', hovertext = "Joint PDF") %>%
+    corr_grid <- expand.grid(x = x,y = y)
+    corr_grid$z <- corr_joint(grid$x, grid$y, input$correlationSlider)
+    corr_z <- matrix(corr_grid$z, nrow = length(x), ncol = length(y))
+    plotlyObj <- plot_ly(x = x, y = y, z = corr_z, type = 'surface', hoverinfo = 'x+y+z+text', hovertext = "Joint PDF") %>%
       layout(scene = list(
         zaxis = list(title = "Density", hoverformat = '.3f'),
-        xaxis = list(hoverformat = '.3f', tickvals = seq(-4,4,by = 2), ticktext = as.character(seq(-4,4,by = 2))),
-        yaxis = list(hoverformat = '.3f', tickvals = seq(-4,4,by = 2), ticktext = as.character(seq(-4,4,by = 2)))
+        xaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 1), ticktext = as.character(seq(-3,3,by = 1))),
+        yaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 1), ticktext = as.character(seq(-3,3,by = 1)))
       ),
       dragmode = FALSE) %>%
       # add marginal paths and scale
-      add_paths(x = x, y = -4, z = (1 / sqrt(2 * pi)) * marg(x), hovertext = "Marginal PDF of X", name = 'Marginal PDF of X', line = list(color = 'black')) %>%
-      add_paths(x = -4, y = y, z = (1 / sqrt(2 * pi)) * marg(y), hovertext = "Marginal PDF of Y", name = 'Marginal PDF of Y', line = list(color = 'black'))
+      add_paths(x = x, y = -3, z = (1 / sqrt(2 * pi)) * marg(x), hovertext = "Marginal PDF of X", name = 'Marginal PDF of X', line = list(color = 'black')) %>%
+      add_paths(x = -3, y = y, z = (1 / sqrt(2 * pi)) * marg(y), hovertext = "Marginal PDF of Y", name = 'Marginal PDF of Y', line = list(color = 'black'))
     config(plotlyObj, displaylogo = FALSE, displayModeBar = TRUE,
            modeBarButtonsToRemove = list('orbitRotation', 'tableRotation', 'pan3d', 'resetCameraLastSave3d', 'toImage'))
   })
@@ -360,17 +359,21 @@ server <- function(input, output, session) {
     eventExpr = input$marg_y, 
     handlerExpr = {
       output$normPlot <- renderUI({
-        plotlyObj <- plot_ly(x = x, y = y, z = z, type = 'surface', hoverinfo = 'x+y+z+text', hovertext = "Joint PDF") %>%
+        corr_grid <- expand.grid(x = x,y = y)
+        corr_grid$z <- corr_joint(grid$x, grid$y, input$correlationSlider)
+        corr_z <- matrix(corr_grid$z, nrow = length(x), ncol = length(y))
+        
+        plotlyObj <- plot_ly(x = x, y = y, z = corr_z, type = 'surface', hoverinfo = 'x+y+z+text', hovertext = "Joint PDF") %>%
           layout(scene = list(
             zaxis = list(title = "Density", hoverformat = '.3f'),
-            xaxis = list(hoverformat = '.3f', tickvals = seq(-4,4,by = 2), ticktext = as.character(seq(-4,4,by = 2))),
-            yaxis = list(hoverformat = '.3f', tickvals = seq(-4,4,by = 2), ticktext = as.character(seq(-4,4,by = 2))),
+            xaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 1), ticktext = as.character(seq(-3,3,by = 1))),
+            yaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 1), ticktext = as.character(seq(-3,3,by = 1))),
             camera = list(eye = list(x = -2.25, y = 0, z = -0.5))
           ),
           dragmode = FALSE) %>%
           # add marginal paths and scale
-          add_paths(x = x, y = -4, z = (1 / sqrt(2 * pi)) * marg(x), hovertext = "Marginal PDF of X", name = 'Marginal PDF of X', line = list(color = 'black')) %>%
-          add_paths(x = -4, y = y, z = (1 / sqrt(2 * pi)) * marg(y), hovertext = "Marginal PDF of Y", name = 'Marginal PDF of Y', line = list(color = 'black'))
+          add_paths(x = x, y = -3, z = (1 / sqrt(2 * pi)) * marg(x), hovertext = "Marginal PDF of X", name = 'Marginal PDF of X', line = list(color = 'black')) %>%
+          add_paths(x = -3, y = y, z = (1 / sqrt(2 * pi)) * marg(y), hovertext = "Marginal PDF of Y", name = 'Marginal PDF of Y', line = list(color = 'black'))
         config(plotlyObj, displaylogo = FALSE, displayModeBar = TRUE,
                modeBarButtonsToRemove = list('orbitRotation', 'tableRotation', 'pan3d', 'resetCameraLastSave3d', 'toImage'))
       })
@@ -381,37 +384,27 @@ server <- function(input, output, session) {
     eventExpr = input$marg_x, 
     handlerExpr = {
       output$normPlot <- renderUI({
-        plotlyObj <- plot_ly(x = x, y = y, z = z, type = 'surface', hoverinfo = 'x+y+z+text', hovertext = "Joint PDF") %>%
+        corr_grid <- expand.grid(x = x,y = y)
+        corr_grid$z <- corr_joint(grid$x, grid$y, input$correlationSlider)
+        corr_z <- matrix(corr_grid$z, nrow = length(x), ncol = length(y))
+        
+        plotlyObj <- plot_ly(x = x, y = y, z = corr_z, type = 'surface', hoverinfo = 'x+y+z+text', hovertext = "Joint PDF") %>%
           layout(scene = list(
             zaxis = list(title = "Density", hoverformat = '.3f'),
-            xaxis = list(hoverformat = '.3f', tickvals = seq(-4,4,by = 2), ticktext = as.character(seq(-4,4,by = 2))),
-            yaxis = list(hoverformat = '.3f', tickvals = seq(-4,4,by = 2), ticktext = as.character(seq(-4,4,by = 2))),
+            xaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 1), ticktext = as.character(seq(-3,3,by = 1))),
+            yaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 1), ticktext = as.character(seq(-3,3,by = 1))),
             camera = list(eye = list(x = 0, y = -2.25, z = -0.5))
           ),
           dragmode = FALSE) %>%
           # add marginal paths and scale
-          add_paths(x = x, y = -4, z = (1 / sqrt(2 * pi)) * marg(x), hovertext = "Marginal PDF of X", name = 'Marginal PDF of X', line = list(color = 'black')) %>%
-          add_paths(x = -4, y = y, z = (1 / sqrt(2 * pi)) * marg(y), hovertext = "Marginal PDF of Y", name = 'Marginal PDF of Y', line = list(color = 'black'))
+          add_paths(x = x, y = -3, z = (1 / sqrt(2 * pi)) * marg(x), hovertext = "Marginal PDF of X", name = 'Marginal PDF of X', line = list(color = 'black')) %>%
+          add_paths(x = -3, y = y, z = (1 / sqrt(2 * pi)) * marg(y), hovertext = "Marginal PDF of Y", name = 'Marginal PDF of Y', line = list(color = 'black'))
         config(plotlyObj, displaylogo = FALSE, displayModeBar = TRUE,
                modeBarButtonsToRemove = list('orbitRotation', 'tableRotation', 'pan3d', 'resetCameraLastSave3d', 'toImage'))
       })
     })
   
   
-  # create correlated pdf function and grid
-  corr_joint <- function(x,y,p) {
-    (1 / ((2 * pi) * sqrt(1-p^2))) * exp(-0.5 * (x^2 + y^2 - 2*p * x * y) / (1-p^2))
-  }
-  
-  
-  #### normal dist. w/ correlation value ----
-  output$corrPlot <- renderUI({
-    corr_grid <- expand.grid(x = x,y = y)
-    corr_grid$z <- corr_joint(grid$x, grid$y, input$correlationSlider)
-    corr_z <- matrix(corr_grid$z, nrow = length(x), ncol = length(y))
-    plot_ly(x = x, y = y, z = corr_z, type = 'surface', hoverinfo = 'x+y+z+text', hovertext = "Joint PDF") %>%
-      layout(scene = list(zaxis = list(title = "Density")))
-  })
   
   # create contour map
   output$contourMap <- renderPlot({
@@ -432,8 +425,8 @@ server <- function(input, output, session) {
                          hoverinfo = 'x+y+z+text', hovertext = "Joint PDF") %>%
       layout(scene = list(
         zaxis = list(title = "Density", hoverformat = '.3f'),
-        xaxis = list(hoverformat = '.3f', tickvals = seq(-4,4,by = 2), ticktext = as.character(seq(-4,4,by = 2))),
-        yaxis = list(hoverformat = '.3f', tickvals = seq(-4,4,by = 2), ticktext = as.character(seq(-4,4,by = 2)))
+        xaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 1), ticktext = as.character(seq(-3,3,by = 1))),
+        yaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 1), ticktext = as.character(seq(-3,3,by = 1)))
       ))
     # create and add conditional plane
     x_val <- matrix(input$condSliderPos, nrow = length(y), ncol = length(z))
@@ -449,13 +442,15 @@ server <- function(input, output, session) {
     # add mesh effect
     plotlyObj <- plotlyObj %>% add_surface(x = ~x, y = ~y, opacity = 0, showscale = FALSE, 
                                            contours = list(
-                                             x = list(show = TRUE, color = 'grey30', width = 1, start = -4, end = 4, size = 0.4),
-                                             y = list(show = TRUE, color = 'grey30', width = 1, start = -4, end = 4, size = 0.4)
+                                             x = list(show = TRUE, color = 'grey30', width = 1, start = -3, end = 3, size = 0.4),
+                                             y = list(show = TRUE, color = 'grey30', width = 1, start = -3, end = 3, size = 0.4)
                                            ))
   })
   
-  # plane subplot (w/ correlation)
+  # plane subplot
   output$condCorrPlane <- renderPlot({
+    x <- seq(-3, 3, length.out = 125)
+    y <- seq(-3, 3, length.out = 125) 
     cond_z <- corr_joint(input$condSliderPos,y, p = input$corrVal) / marg(input$condSliderPos)
     ggplotObj <- ggplot(data = data.frame(y = y, cond_z = cond_z), 
                         mapping = aes(x = y, y = cond_z)) +
@@ -468,3 +463,4 @@ server <- function(input, output, session) {
 
 # Boast App Call ----
 boastUtils::boastApp(ui = ui, server = server)
+
