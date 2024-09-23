@@ -69,8 +69,8 @@ ui <- list(
           h2("Instructions"),
           tags$ol(
             tags$li("Review any prerequiste ideas using the Prerequistes tab."),
-            tags$li("Explore the Joint vs Marginal tab to work with interactive 3D
-                    graphs of the joint and marginal PDFs."),
+            tags$li("Navigate to the Joint vs Marginal tab to work with interactive 3D
+                    graphs of the joint and marginal PDFs with the button below."),
             tags$li("Continue on to the Conditioning tab to explore representations
                     of conditional and joint PDFs to see how they compare."),
             tags$li("Test your knowledge on the Challenge tab by answering questions
@@ -80,8 +80,8 @@ ui <- list(
           div(
             style = "text-align: center;",
             bsButton(
-              inputId = "go1",
-              label = "GO!",
+              inputId = "exploreButton",
+              label = "Explore",
               size = "large",
               icon = icon("bolt"),
               style = "default"
@@ -92,11 +92,9 @@ ui <- list(
           br(),
           h2("Acknowledgements"),
           p(
-            "This version of the app was developed and coded by Neil J.
-            Hatfield  and Robert P. Carey, III.",
-            br(),
-            "We would like to extend a special thanks to the Shiny Program
-            Students.",
+            "This version of the app was developed and coded by Nathan Pechulis. 
+            Special thanks to Neil J. Hatfield and Dennis Pearl for their help
+            with programming and content.",
             br(),
             br(),
             "Cite this app as:",
@@ -104,7 +102,7 @@ ui <- list(
             citeApp(),
             br(),
             br(),
-            div(class = "updated", "Last Update: 9/9/2024 by NP.")
+            div(class = "updated", "Last Update: 9/22/2024 by NP.")
           )
         ),
         #### Set up the Prerequisites Page ----
@@ -116,21 +114,36 @@ ui <- list(
             if necessary. Simply click on the plus sign on each tab to expand it."),
           br(),
           box(
-            title = strong("Basic Distribution Information"),
+            title = strong("Distribution Information and Notation"),
             status = "primary",
             collapsible = TRUE,
-            collapsed = TRUE,
+            collapsed = FALSE,
             width = '100%',
-            "fill in later"
-          ),
-          box(
-            title = strong("Distribution Notation"),
-            status = "primary",
-            collapsible = TRUE,
-            collapsed = TRUE,
-            width = '100%',
-            "Here I can explain basic notation like e[X] = ... and 
-            var[X] = ... etc."
+            p(tags$strong("Distributions:"), 'A probability distribution is a function that 
+              maps the probability for all potential events associated with a random variable 
+              (function that assigns a number to each outcome in any event). Distributions can 
+              be either discrete, where the data takes on only specific values (like shoe size 
+              that comes in half or full size increments), or continuous, where the data can take 
+              on any value within a certain interval (like volume or mass). But, in this app, we 
+              will be exclusively examining continuous distributions. ',
+              br(),
+              br(),
+              tags$strong("PDF:"), 'The probability mass function, or PDF, of a continuous distribution
+              describes how proabability is distributed over the values of a random variable.',
+              br(),
+              br(),
+              tags$strong("Expected Value:"), "The expected value for a random variable measures its central
+              tendency and is a synonym for the mean. It is denoted by 'E(X)' and it can be calculated
+              by integrating over the possible range of the random variable.",
+              br(),
+              br(),
+              tags$strong("Notation:"), "Distribution notation typically looks like this:",
+              tags$em('X'), "~ Distribution(p)",
+              br(),
+              'where', tags$em('X'), "is the random variable, ~ means 'distributed as', 'Distribution'
+              represents the type of named distribution of the variable, and p represents any parameters
+              necessary for the distribution."
+            )
           ),
           box(
             title = strong("Marginal Distributions"),
@@ -157,7 +170,15 @@ ui <- list(
             "fill in later"
           ),
           box(
-            title = strong("Additional Topics"),
+            title = strong("Independence"),
+            status = "primary",
+            collapsible = TRUE,
+            collapsed = TRUE,
+            width = '100%',
+            "fill in later"
+          ),
+          box(
+            title = strong("Interpreting Plots"),
             status = "primary",
             collapsible = TRUE,
             collapsed = TRUE,
@@ -176,44 +197,45 @@ ui <- list(
           p('This explore page features the 3D joint PDF of two independent standard normal
             random variables with some correlation value', tags$em('p'), 'that can be
             adjusted using the slider. The joint PDF graph also features the normalized
-            marginal PDFs of each random variable. The graph on the right is a contour plot that shows
+            marginal PDFs of each random variable. The graph on the bottom is a contour plot that shows
             an aerial view of the spread of the joint distribution as the correlation slider
-            is adjusted.'),
+            is adjusted. Use the slider to adjust the correlation value and see how both plots respond,
+            then use the buttons to change between the marginal perspectives or reset the view.'),
+          p(tags$strong('Guiding Question: How do the marginal PDFs change as the correlation value is adjusted
+                        and what does that tell you about the Bivariate Normal distribution?')),
           fluidRow(
             column(
-              width = 6,
-              uiOutput("normPlot")
-            ),
-            column(
-              width = 6,
-              plotOutput("contourMap")
-            )
-          ),
-          fluidRow(
-            column(
-              width = 6,
-              bsButton(
-                inputId = "marg_y", 
-                label = "Marginal View of Y", 
-                size = "large"
-              ),
-              bsButton(
-                inputId = "marg_x", 
-                label = "Marginal View of X", 
-                size = "large"
-              )
-            ),
-            column(
-              width = 6,
+              width = 4,
               wellPanel(
                 sliderInput(
                   inputId = 'correlationSlider',
-                  label = 'Adjust the slider to change the correlation value p',
+                  label = p('Correlation value', tags$em('p')),
                   min = -0.9,
                   max = 0.9,
                   value = 0,
-                  step = 0.01
-                ))
+                  step = 0.01),
+                bsButton(
+                  inputId = "marg_y", 
+                  label = "Marginal of Y", 
+                  size = "large"
+                ),
+                bsButton(
+                  inputId = "marg_x", 
+                  label = "Marginal of X", 
+                  size = "large"
+                ),
+                bsButton(
+                  inputId = "defaultView", 
+                  label = "Reset View", 
+                  size = "large"
+                )
+              )
+            ),
+            column(
+              width = 8,
+              uiOutput("normPlot"),
+              align = 'center',
+              plotOutput("contourMap", width = "60%")
             )
           )
         ),
@@ -222,44 +244,37 @@ ui <- list(
           tabName = "explore2",
           withMathJax(),
           h2("Conditioning"),
-          p("This explore page features a 3D graph of the joint PDF and a 2D graph of the conditional PDF on the right.
-            The conditional value", tags$em('p') ,"can be changed using the left slider and the position of the conditional plane (X = x)
-            can be altered with the slider on the right."),
+          p("This explore page features a 3D graph of the joint PDF with a conditional slice cutting through it and a 2D graph 
+          of the conditional PDF below it. The conditional value", tags$em('p') ,"and the positioning of the conditioning plane 
+          can be adjusted using the sliders on the left."),
+          p(tags$strong('Guiding Question: How does the conditional PDF respond when the conditoning
+                        plane is shifted with and without a correlation value?')),
           fluidRow(
             column(
-              width = 6,
-              uiOutput("condCorr")
-            ),
-            column(
-              width = 6,
-              plotOutput('condCorrPlane')
-            )
-          ),
-          br(),
-          fluidRow(
-            column(
-              width = 6,
+              width = 4,
               wellPanel(
                 sliderInput(
                   inputId = 'corrVal',
-                  label = 'Adjust the slider to change the correlation value',
+                  label = p('Correlation value', tags$em('p')),
                   min = -0.9,
                   max = 0.9,
                   value = 0,
-                  step = 0.01
-                ))
-            ),
-            column(
-              width = 6,
-              wellPanel(
+                  step = 0.01),
+                br(),
                 sliderInput(
                   inputId = 'condSliderPos',
-                  label = 'Adjust the slider to move the positioning of the conditional plane',
+                  label = p('Conditional plane (X =', tags$em('x)')),
                   min = -2.5,
                   max = 2.5,
                   value = 0,
-                  step = 0.1
-                ))
+                  step = 0.1)
+              )
+            ),
+            column(
+              width = 8,
+              uiOutput("condCorr"),
+              align = 'center',
+              plotOutput('condCorrPlane', width = '60%')
             )
           )
         ),
@@ -297,7 +312,7 @@ ui <- list(
 # Define server logic ----
 server <- function(input, output, session) {
 
-  ## Set up Info button ----
+  ## Set up Info and Explore buttons ----
   observeEvent(
     eventExpr = input$info,
     handlerExpr = {
@@ -309,6 +324,16 @@ server <- function(input, output, session) {
       )
     }
   )
+  
+  observeEvent(
+    eventExpr = input$exploreButton,
+    handlerExpr = {
+      updateTabItems(
+        session = session,
+        inputId = "pages",
+        selected = "explore1"
+      )
+    })
   
   
   ## Create Explore Page Graphs ----
@@ -339,21 +364,20 @@ server <- function(input, output, session) {
     corr_grid <- expand.grid(x = x,y = y)
     corr_grid$z <- corr_joint(grid$x, grid$y, input$correlationSlider)
     corr_z <- matrix(corr_grid$z, nrow = length(x), ncol = length(y))
-    plotlyObj <- plot_ly(x = x, y = y, z = corr_z, type = 'surface', hoverinfo = 'x+y+z+text', hovertext = "Joint PDF") %>%
+    plotlyObj <- plot_ly(x = x, y = y, z = corr_z, type = 'surface', hoverinfo = 'x+y+z+text', hovertext = "Joint PDF", colorscale = 'Jet') %>%
       layout(scene = list(
         zaxis = list(title = "Density", hoverformat = '.3f'),
-        xaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 1), ticktext = as.character(seq(-3,3,by = 1))),
-        yaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 1), ticktext = as.character(seq(-3,3,by = 1)))
+        xaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 2), ticktext = as.character(seq(-3,3,by = 2))),
+        yaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 2), ticktext = as.character(seq(-3,3,by = 2)))
       ),
       dragmode = FALSE) %>%
       # add marginal paths and scale
       add_paths(x = x, y = -3, z = (1 / sqrt(2 * pi)) * marg(x), hovertext = "Marginal PDF of X", name = 'Marginal PDF of X', line = list(color = 'black')) %>%
       add_paths(x = -3, y = y, z = (1 / sqrt(2 * pi)) * marg(y), hovertext = "Marginal PDF of Y", name = 'Marginal PDF of Y', line = list(color = 'black'))
-    config(plotlyObj, displaylogo = FALSE, displayModeBar = TRUE,
-           modeBarButtonsToRemove = list('orbitRotation', 'tableRotation', 'pan3d', 'resetCameraLastSave3d', 'toImage'))
+    config(plotlyObj, displaylogo = FALSE, displayModeBar = FALSE)
   })
   
-  # change views based on button clicking
+  #### Button Views ----
   # marginal of y view
   observeEvent(
     eventExpr = input$marg_y, 
@@ -363,19 +387,18 @@ server <- function(input, output, session) {
         corr_grid$z <- corr_joint(grid$x, grid$y, input$correlationSlider)
         corr_z <- matrix(corr_grid$z, nrow = length(x), ncol = length(y))
         
-        plotlyObj <- plot_ly(x = x, y = y, z = corr_z, type = 'surface', hoverinfo = 'x+y+z+text', hovertext = "Joint PDF") %>%
+        plotlyObj <- plot_ly(x = x, y = y, z = corr_z, type = 'surface', hoverinfo = 'x+y+z+text', hovertext = "Joint PDF", colorscale = 'Jet') %>%
           layout(scene = list(
             zaxis = list(title = "Density", hoverformat = '.3f'),
-            xaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 1), ticktext = as.character(seq(-3,3,by = 1))),
-            yaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 1), ticktext = as.character(seq(-3,3,by = 1))),
+            xaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 2), ticktext = as.character(seq(-3,3,by = 2))),
+            yaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 2), ticktext = as.character(seq(-3,3,by = 2))),
             camera = list(eye = list(x = -2.25, y = 0, z = -0.5))
           ),
           dragmode = FALSE) %>%
           # add marginal paths and scale
           add_paths(x = x, y = -3, z = (1 / sqrt(2 * pi)) * marg(x), hovertext = "Marginal PDF of X", name = 'Marginal PDF of X', line = list(color = 'black')) %>%
           add_paths(x = -3, y = y, z = (1 / sqrt(2 * pi)) * marg(y), hovertext = "Marginal PDF of Y", name = 'Marginal PDF of Y', line = list(color = 'black'))
-        config(plotlyObj, displaylogo = FALSE, displayModeBar = TRUE,
-               modeBarButtonsToRemove = list('orbitRotation', 'tableRotation', 'pan3d', 'resetCameraLastSave3d', 'toImage'))
+        config(plotlyObj, displaylogo = FALSE, displayModeBar = FALSE)
       })
     })
   
@@ -388,21 +411,43 @@ server <- function(input, output, session) {
         corr_grid$z <- corr_joint(grid$x, grid$y, input$correlationSlider)
         corr_z <- matrix(corr_grid$z, nrow = length(x), ncol = length(y))
         
-        plotlyObj <- plot_ly(x = x, y = y, z = corr_z, type = 'surface', hoverinfo = 'x+y+z+text', hovertext = "Joint PDF") %>%
+        plotlyObj <- plot_ly(x = x, y = y, z = corr_z, type = 'surface', hoverinfo = 'x+y+z+text', hovertext = "Joint PDF", colorscale = 'Jet') %>%
           layout(scene = list(
             zaxis = list(title = "Density", hoverformat = '.3f'),
-            xaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 1), ticktext = as.character(seq(-3,3,by = 1))),
-            yaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 1), ticktext = as.character(seq(-3,3,by = 1))),
+            xaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 2), ticktext = as.character(seq(-3,3,by = 2))),
+            yaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 2), ticktext = as.character(seq(-3,3,by = 2))),
             camera = list(eye = list(x = 0, y = -2.25, z = -0.5))
           ),
           dragmode = FALSE) %>%
           # add marginal paths and scale
           add_paths(x = x, y = -3, z = (1 / sqrt(2 * pi)) * marg(x), hovertext = "Marginal PDF of X", name = 'Marginal PDF of X', line = list(color = 'black')) %>%
           add_paths(x = -3, y = y, z = (1 / sqrt(2 * pi)) * marg(y), hovertext = "Marginal PDF of Y", name = 'Marginal PDF of Y', line = list(color = 'black'))
-        config(plotlyObj, displaylogo = FALSE, displayModeBar = TRUE,
-               modeBarButtonsToRemove = list('orbitRotation', 'tableRotation', 'pan3d', 'resetCameraLastSave3d', 'toImage'))
+        config(plotlyObj, displaylogo = FALSE, displayModeBar = FALSE)
       })
     })
+  
+  # Default view button
+  observeEvent(
+    eventExpr = input$defaultView,
+      handlerExpr = {
+        output$normPlot <- renderUI({
+          corr_grid <- expand.grid(x = x,y = y)
+          corr_grid$z <- corr_joint(grid$x, grid$y, input$correlationSlider)
+          corr_z <- matrix(corr_grid$z, nrow = length(x), ncol = length(y))
+          plotlyObj <- plot_ly(x = x, y = y, z = corr_z, type = 'surface', hoverinfo = 'x+y+z+text', hovertext = "Joint PDF", colorscale = 'Jet') %>%
+            layout(scene = list(
+              zaxis = list(title = "Density", hoverformat = '.3f'),
+              xaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 2), ticktext = as.character(seq(-3,3,by = 2))),
+              yaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 2), ticktext = as.character(seq(-3,3,by = 2)))
+            ),
+            dragmode = FALSE) %>%
+            # add marginal paths and scale
+            add_paths(x = x, y = -3, z = (1 / sqrt(2 * pi)) * marg(x), hovertext = "Marginal PDF of X", name = 'Marginal PDF of X', line = list(color = 'black')) %>%
+            add_paths(x = -3, y = y, z = (1 / sqrt(2 * pi)) * marg(y), hovertext = "Marginal PDF of Y", name = 'Marginal PDF of Y', line = list(color = 'black'))
+          config(plotlyObj, displaylogo = FALSE, displayModeBar = FALSE)
+        })
+    }
+  )
   
   
   
@@ -411,7 +456,7 @@ server <- function(input, output, session) {
     corr_grid <- expand.grid(x = x,y = y)
     corr_grid$z <- corr_joint(grid$x, grid$y, input$correlationSlider)
     corr_z <- matrix(corr_grid$z, nrow = length(x), ncol = length(y))
-    filled.contour(x,y,corr_z, asp = 1, color.palette = viridis,
+    filled.contour(x,y,corr_z, asp = 1, color.palette = colorRampPalette(c("darkblue", "cyan", "yellow", "red")),
                    plot.title = title(main = "Contour Map", xlab = 'x', ylab = 'y'))
   })
   
@@ -427,7 +472,8 @@ server <- function(input, output, session) {
         zaxis = list(title = "Density", hoverformat = '.3f'),
         xaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 1), ticktext = as.character(seq(-3,3,by = 1))),
         yaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 1), ticktext = as.character(seq(-3,3,by = 1)))
-      ))
+      ),
+      dragmode = FALSE)
     # create and add conditional plane
     x_val <- matrix(input$condSliderPos, nrow = length(y), ncol = length(z))
     z[z >= corr_joint(input$condSliderPos, y, p = input$corrVal)] <- NA
@@ -442,9 +488,10 @@ server <- function(input, output, session) {
     # add mesh effect
     plotlyObj <- plotlyObj %>% add_surface(x = ~x, y = ~y, opacity = 0, showscale = FALSE, 
                                            contours = list(
-                                             x = list(show = TRUE, color = 'grey30', width = 1, start = -3, end = 3, size = 0.4),
-                                             y = list(show = TRUE, color = 'grey30', width = 1, start = -3, end = 3, size = 0.4)
+                                             x = list(show = TRUE, color = 'grey30', width = 1, start = -3, end = 3, size = 0.5),
+                                             y = list(show = TRUE, color = 'grey30', width = 1, start = -3, end = 3, size = 0.5)
                                            ))
+    config(plotlyObj, displaylogo = FALSE, displayModeBar = FALSE)
   })
   
   # plane subplot

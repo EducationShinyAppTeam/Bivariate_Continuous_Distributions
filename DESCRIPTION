@@ -5,7 +5,7 @@ Lifecycle: experimental
 Authors@R: c(
     person(given = "Nathan", family = "Pechulis", role = c("cre", "aut")),
     person(given = "Neil", family = "Hatfield", email = "neil.hatfield@psu.edu", role = c("aut")),
-    person(given = "Robert", family = "Carey", email = "rpc5102@psu.edu", role = c("aut"))
+    person(given = "Dennis", family = "Pearl", email = "dkp13@psu.edu", role = c("aut"))
   )
 Chapter: Chapter 5A - Probability
 Description: This app is focused on exploring bivariate continuous distributions and their joint, marginal, and conditional probability density functions.
