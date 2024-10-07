@@ -203,8 +203,8 @@ ui <- list(
           tabName = "explore1",
           withMathJax(),
           h2("Joint and Marginal PDFs"),
-          p('This explore page features the 3D joint PDF of two independent standard normal
-            random variables with some correlation value', HTML("&#x03C1;"), 'that can be
+          p('This explore page features the two-dimensional PDF function of two independent standard normal
+            random variables as a 3D plot with some correlation value', HTML("&#x03C1;"), 'that can be
             adjusted using the slider. The joint PDF graph also features the normalized
             marginal PDFs of each random variable. The graph on the bottom is a contour plot that shows
             an aerial view of the spread of the joint distribution as the correlation slider
@@ -243,8 +243,10 @@ ui <- list(
             column(
               width = 8,
               uiOutput("normPlot"),
+              p('3d plot caption (color scale represents value of joint density)'),
               align = 'center',
-              plotOutput("contourMap", width = "60%")
+              plotOutput("contourMap", width = "60%"),
+              p('contour plot caption (aerial view of the spread of joint distribution)')
             )
           )
         ),
@@ -253,11 +255,12 @@ ui <- list(
           tabName = "explore2",
           withMathJax(),
           h2("Conditioning"),
-          p("This explore page features a 3D graph of the joint PDF with a conditional slice cutting through it and a 2D graph 
-          of the conditional PDF below it. The conditional value", HTML("&#x03C1;") ,"and the positioning of the conditioning plane 
-          can be adjusted using the sliders on the left. Also utilize the play buttons below each slider to see a moving animation
-            that helps to visualize the 3D plot better."),
-          p(tags$strong('Guiding Question: How does the 2D conditional PDF respond when the conditoning
+          p("This explore page features a 3D graph of the joint PDF of", tags$em('x'), 'and', tags$em('y'), "with a conditional slice at a chosen value
+          of", tags$em('x'), "cutting through it. The conditional PDF of", tags$em('y'), "given (X = ", tags$em('x)'), "is shown below.",
+          "The value of", HTML("&#x03C1;") ,"in the joint density and the positioning of the conditioning plane 
+          can be adjusted using the sliders on the left. Also utilize the play button below the plane positioning slider to see a moving animation
+            of the conditional slice or click the 'Show statistics' checkbox to see the distribution statistics."),
+          p(tags$strong('Guiding Question: How does the conditional PDF respond when the conditoning
                         plane slider is shifted with and without a correlation value?')),
           fluidRow(
             column(
@@ -278,16 +281,19 @@ ui <- list(
                   max = 2.5,
                   value = 0,
                   step = 0.1,
-                  animate = animationOptions(interval = 1500, playButton = icon('forward'))),
-                checkboxInput(inputId = 'condCheckbox', label = 'Show Statistics'),
+                  animate = animationOptions(interval = 2000, playButton = icon('forward'))),
+                checkboxInput(inputId = 'condCheckbox', label = 'Show statistics'),
                 uiOutput('showStats')
               )
             ),
             column(
               width = 8,
               uiOutput("condCorr"),
+              p('Caption: Wire frame diagram of x and y, the blue shaded region shows 
+                \\[X~\\sim\\text{Distribution}(p)\\]'),
               align = 'center',
-              plotOutput('condCorrPlane', width = '60%')
+              plotOutput('condCorrPlane', width = '60%'),
+              p('plane plot caption (not cond dist, shows joint density at slice)')
             )
           )
         ),
@@ -421,11 +427,15 @@ server <- function(input, output, session) {
     corr_z <- matrix(corr_grid$z, nrow = length(x), ncol = length(y))
     plotlyObj <- plot_ly(x = x, y = y, z = corr_z, type = 'surface', hoverinfo = 'x+y+z+text', hovertext = "Joint PDF", colorscale = 'Jet') %>%
       layout(scene = list(
-        zaxis = list(title = "Density", hoverformat = '.3f'),
+        zaxis = list(title = "Joint Density", hoverformat = '.3f'),
         xaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 2), ticktext = as.character(seq(-3,3,by = 2))),
         yaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 2), ticktext = as.character(seq(-3,3,by = 2)))
       ),
-      dragmode = FALSE) %>%
+      dragmode = FALSE,
+      title = list(text = 'Joint PDF Plot',
+                   font = list(size = 18),
+                   x = 0.43,
+                   y = 0.95)) %>%
       # add marginal paths and scale
       add_paths(x = x, y = -3, z = (1 / sqrt(2 * pi)) * marg(x), hovertext = "Marginal PDF of X", name = 'Marginal PDF of X', line = list(color = 'black', dash = 'dash')) %>%
       add_paths(x = -3, y = y, z = (1 / sqrt(2 * pi)) * marg(y), hovertext = "Marginal PDF of Y", name = 'Marginal PDF of Y', line = list(color = boastPalette[8]))
@@ -449,10 +459,14 @@ server <- function(input, output, session) {
             yaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 2), ticktext = as.character(seq(-3,3,by = 2))),
             camera = list(eye = list(x = -2.25, y = 0, z = -0.5))
           ),
-          dragmode = FALSE) %>%
+          dragmode = FALSE,
+          title = list(text = 'Joint PDF Plot',
+                       font = list(size = 18),
+                       x = 0.43,
+                       y = 0.95)) %>%
           # add marginal paths and scale
           add_paths(x = x, y = -3, z = (1 / sqrt(2 * pi)) * marg(x), hovertext = "Marginal PDF of X", name = 'Marginal PDF of X', line = list(color = 'black', dash = 'dash')) %>%
-          add_paths(x = -3, y = y, z = (1 / sqrt(2 * pi)) * marg(y), hovertext = "Marginal PDF of Y", name = 'Marginal PDF of Y', line = list(color = 'black'))
+          add_paths(x = -3, y = y, z = (1 / sqrt(2 * pi)) * marg(y), hovertext = "Marginal PDF of Y", name = 'Marginal PDF of Y', line = list(color = boastPalette[8]))
         config(plotlyObj, displaylogo = FALSE, displayModeBar = FALSE)
       })
     })
@@ -473,10 +487,14 @@ server <- function(input, output, session) {
             yaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 2), ticktext = as.character(seq(-3,3,by = 2))),
             camera = list(eye = list(x = 0, y = -2.25, z = -0.5))
           ),
-          dragmode = FALSE) %>%
+          dragmode = FALSE,
+          title = list(text = 'Joint PDF Plot',
+                       font = list(size = 18),
+                       x = 0.43,
+                       y = 0.95)) %>%
           # add marginal paths and scale
           add_paths(x = x, y = -3, z = (1 / sqrt(2 * pi)) * marg(x), hovertext = "Marginal PDF of X", name = 'Marginal PDF of X', line = list(color = 'black', dash = 'dash')) %>%
-          add_paths(x = -3, y = y, z = (1 / sqrt(2 * pi)) * marg(y), hovertext = "Marginal PDF of Y", name = 'Marginal PDF of Y', line = list(color = 'black'))
+          add_paths(x = -3, y = y, z = (1 / sqrt(2 * pi)) * marg(y), hovertext = "Marginal PDF of Y", name = 'Marginal PDF of Y', line = list(color = boastPalette[8]))
         config(plotlyObj, displaylogo = FALSE, displayModeBar = FALSE)
       })
     })
@@ -495,10 +513,14 @@ server <- function(input, output, session) {
               xaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 2), ticktext = as.character(seq(-3,3,by = 2))),
               yaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 2), ticktext = as.character(seq(-3,3,by = 2)))
             ),
-            dragmode = FALSE) %>%
+            dragmode = FALSE,
+            title = list(text = 'Joint PDF Plot',
+                         font = list(size = 18),
+                         x = 0.43,
+                         y = 0.95)) %>%
             # add marginal paths and scale
             add_paths(x = x, y = -3, z = (1 / sqrt(2 * pi)) * marg(x), hovertext = "Marginal PDF of X", name = 'Marginal PDF of X', line = list(color = 'black', dash = 'dash')) %>%
-            add_paths(x = -3, y = y, z = (1 / sqrt(2 * pi)) * marg(y), hovertext = "Marginal PDF of Y", name = 'Marginal PDF of Y', line = list(color = 'black'))
+            add_paths(x = -3, y = y, z = (1 / sqrt(2 * pi)) * marg(y), hovertext = "Marginal PDF of Y", name = 'Marginal PDF of Y', line = list(color = boastPalette[8]))
           config(plotlyObj, displaylogo = FALSE, displayModeBar = FALSE)
         })
     }
@@ -512,7 +534,8 @@ server <- function(input, output, session) {
     corr_grid$z <- corr_joint(grid$x, grid$y, input$correlationSlider)
     corr_z <- matrix(corr_grid$z, nrow = length(x), ncol = length(y))
     filled.contour(x,y,corr_z, asp = 1, color.palette = colorRampPalette(c("darkblue", "cyan", "yellow", "red")),
-                   plot.title = title(main = "Joint Contour Plot", xlab = 'x', ylab = 'y'))
+                   plot.title = title(main = "Joint Contour Plot", cex.main = 1.4, xlab = 'x', ylab = 'y', cex.lab = 1.5),
+                   plot.axes = {axis(1, cex.axis = 1.3); axis(2, cex.axis = 1.3)})
   })
   
   
@@ -528,7 +551,11 @@ server <- function(input, output, session) {
         xaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 1), ticktext = as.character(seq(-3,3,by = 1))),
         yaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 1), ticktext = as.character(seq(-3,3,by = 1)))
       ),
-      dragmode = FALSE)
+      dragmode = FALSE,
+      title = list(text = 'Conditional PDF Plot',
+                   font = list(size = 18),
+                   x = 0.52,
+                   y = 0.95))
     # create and add conditional plane
     x_val <- matrix(input$condSliderPos, nrow = length(y), ncol = length(z))
     z[z >= corr_joint(input$condSliderPos, y, p = input$corrVal)] <- NA
@@ -571,10 +598,9 @@ server <- function(input, output, session) {
   
   output$showStats <- renderUI({
     if (input$condCheckbox) {
-      HTML('\\[X~\\sim\\text{Distribution}(\\rho)\\]')
-    } else {
-      HTML('')
-    }
+      withMathJax(
+      HTML('\\[(X,Y)~\\sim\\text{Normal}(\\mu_X, \\mu_Y, \\sigma_X^2, \\sigma_Y^2, \\rho)\\]'))
+    } 
   })
 
 
