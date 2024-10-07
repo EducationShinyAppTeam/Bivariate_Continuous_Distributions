@@ -4,13 +4,9 @@ library(shinydashboard)
 library(shinyBS)
 library(shinyWidgets)
 library(boastUtils)
-library(DT)
 library(ggplot2)
-library(tidyr)
 library(plotly)
-library(MASS)
 library(graphics)
-library(viridis)
 
 # Load additional dependencies and setup functions
 # source("global.R")
@@ -22,7 +18,7 @@ ui <- list(
     skin = "blue",
     ### Create the app header ----
     dashboardHeader(
-      title = "Bivariate Continuous", # You may use a shortened form of the title here
+      title = "Bivariate Distributions", # You may use a shortened form of the title here
       titleWidth = 250,
       tags$li(class = "dropdown", actionLink("info", icon("info"))),
       tags$li(
@@ -45,7 +41,7 @@ ui <- list(
         id = "pages",
         menuItem("Overview", tabName = "overview", icon = icon("gauge-high")),
         menuItem("Prerequisites", tabName = "prerequisites", icon = icon("book")),
-        menuItem("Joint vs Marginal", tabName = "explore1", icon = icon("wpexplorer")),
+        menuItem("Joint and Marginal", tabName = "explore1", icon = icon("wpexplorer")),
         menuItem("Conditioning", tabName = "explore2", icon = icon("wpexplorer")),
         menuItem("Challenge", tabName = "challenge", icon = icon("gears")),
         menuItem("References", tabName = "references", icon = icon("leanpub"))
@@ -63,13 +59,13 @@ ui <- list(
           tabName = "overview",
           withMathJax(),
           h1("Bivariate Continuous Distributions"), # This should be the full name.
-          p("This app will explore bivariate continuous probability distributions in a real-world sense
-            by examining joint vs marginal Probability Density Functions (PDFs) along with the conditional PDF.
-            It will also explore ideas of independence and parameter adjustments to see how the PDFs respond."),
+          p("This app will explore bivariate continuous probability distributions by examining the relationship
+          between joint and marginal density functions along with the conditional independence.
+            "),
           h2("Instructions"),
           tags$ol(
-            tags$li("Review any prerequiste ideas using the Prerequistes tab."),
-            tags$li("Navigate to the Joint vs Marginal tab to work with interactive 3D
+            tags$li("Review any prerequisite ideas using the Prerequisites tab."),
+            tags$li("Navigate to the Joint and Marginal tab to work with interactive 3D
                     graphs of the joint and marginal PDFs with the button below."),
             tags$li("Continue on to the Conditioning tab to explore representations
                     of conditional and joint PDFs to see how they compare."),
@@ -102,7 +98,7 @@ ui <- list(
             citeApp(),
             br(),
             br(),
-            div(class = "updated", "Last Update: 9/30/2024 by NP.")
+            div(class = "updated", "Last Update: 10/7/2024 by NP.")
           )
         ),
         #### Set up the Prerequisites Page ----
@@ -111,7 +107,7 @@ ui <- list(
           withMathJax(),
           h2("Prerequisites"),
           p("Here, you can review some topics involved in bivariate continuous distributions,
-            if necessary. Simply click on the plus sign on each tab to expand it."),
+            if necessary. Simply click on the plus/minus sign on each tab to expand/minimize them."),
           br(),
           box(
             title = strong("Distribution Information and Notation"),
@@ -128,36 +124,21 @@ ui <- list(
               will be exclusively examining continuous distributions. ',
               br(),
               br(),
-              tags$strong("Notation:"), "Distribution notation typically looks like this: \\[X~\\sim\\text{Distribution}(\\rho)\\]
+              tags$strong("Notation:"), "Distribution notation typically looks like this: \\[X~\\sim\\text{Distribution}(p)\\]
               where", tags$em('X'), "is the random variable, '~' means 'distributed as', 'Distribution'
-              represents the type of named distribution of the variable, and", HTML("&#x03C1;"), "represents any parameters
+              represents the type of named distribution of the variable, and", tags$em('p'), "represents any parameters
               necessary for the distribution.",
               br(),
               br(),
-              tags$strong("PDF:"), 'The probability density function, or PDF, of a continuous distribution
-              describes how probability is distributed over the values of a random variable.',
+              tags$strong("PDF:"), 'A probability density function, or PDF, of a continuous distribution
+              provides probability per unit of', tags$em('x'), 'over the values of a random variable, thus it integrates to 1 over the whole range.',
               br(),
               br(),
               tags$strong("Expected Value:"), "The expected value for a random variable measures its central
               tendency and is a synonym for the mean. It is denoted by 'E(X)' and it can be calculated
-              by integrating over the possible range of the random variable.",
+              by integrating", tags$em('x') ,"times f(x) over the possible range of the random variable.",
               br(),
               br()
-            )
-          ),
-          box(
-            title = strong("Marginal Distributions"),
-            status = "primary",
-            collapsible = TRUE,
-            collapsed = TRUE,
-            width = '100%',
-            p(tags$strong("Definition:"), "Marginal Distributions describe the probability distribution of one of the variables
-              within a multivariate setting. For continuous random variables, it is done by integrating the joint PDF with respect 
-              to the opposite variable to remove it from the equation. The marginal PDF formula is pictured below: 
-              \\[f_X(x)=\\int_{-\\infty}^{\\infty} f_{X,Y}(x,y)dy\\]",
-              br(),
-              tags$strong("Normal Distribution:"), 'When it comes to the Bivariate Normal setting, the marginal distribution
-              is also normally distributed. The formula for the marginal of', tags$em('x'), 'would end up being: \\[f_X(x)=\\text{Normal}(\\mu_1, \\sigma^2_1)\\]'
             )
           ),
           box(
@@ -166,13 +147,29 @@ ui <- list(
             collapsible = TRUE,
             collapsed = TRUE,
             width = '100%',
-            p(tags$strong('Definition:'), "A joint distribution describes the probability distribution of two or more variables simultaneously. 
-            If you were to integrate all of the values of both variables from negative infinity to infinity, it would equal the total probability space,
-              which is 1. The joint PDF is typically denoted like: \\[f_{X,Y}(x,y)\\]",
+            p(tags$strong('Definition:'), "A joint density function describes the probability distribution of two or more variables simultaneously. 
+            If you were to integrate over all values of the variables, it would equal the total probability space,
+              which is 1. The joint PDF of two variables", tags$em('x'), 'and', tags$em('y'), "can be denoted: \\[f_{X,Y}(x,y)\\]",
               br(),
-              tags$strong("Bivariate Normal:"), 'For the Bivariate Normal setting, both', tags$em('X'), 'and', tags$em('Y'), 'must be normally distributed.
-              The joint PDF of two random variables that follow a Bivariate Normal distribution is: 
+              tags$strong("Bivariate Normal:"), 'For the Bivariate Normal setting, both', tags$em('X'), 'and', tags$em('Y'), 'are normally distributed with', HTML("&#x03C1;"), 'being the correlation value.',
+              'The joint PDF of two random variables that follow a Bivariate Normal distribution is: 
               $$f_{X,Y}(x,y) = \\frac{1}{2\\pi \\sigma_X \\sigma_Y \\sqrt{1 - \\rho^2}} \\exp\\left(-\\frac{1}{2(1 - \\rho^2)}\\left(\\frac{(x - \\mu_X)^2}{\\sigma_X^2} + \\frac{(y - \\mu_Y)^2}{\\sigma_Y^2} - \\frac{2\\rho (x - \\mu_X)(y - \\mu_Y)}{\\sigma_X \\sigma_Y}\\right)\\right)$$')
+          ),
+          box(
+            title = strong("Marginal Distributions"),
+            status = "primary",
+            collapsible = TRUE,
+            collapsed = TRUE,
+            width = '100%',
+            p(tags$strong("Definition:"), "Marginal Distributions describe the probability distribution of one of the variables
+              within a multivariate setting. For continuous random variables, it is found by integrating the joint PDF with respect 
+              to the other variable(s) to remove it from the equation. For example, the marginal PDF formula of", tags$em('x'), "is:
+              \\[f_X(x)=\\int_{-\\infty}^{\\infty} f_{X,Y}(x,y)dy\\]",
+              br(),
+              tags$strong("Normal Distribution:"), 'When it comes to the Bivariate Normal setting, the marginal distribution
+            is also normally distributed. The formula for the marginal PDF of', tags$em('x'), 'in a Bivariate Normal distribution is: 
+              \\[f_X(x) = \\frac{1}{\\sigma_X \\sqrt{2\\pi}} \\exp\\left(-\\frac{(x-  \\mu_X)^2}{2\\sigma_X^2}\\right)\\]'
+            )
           ),
           box(
             title = strong("Conditional Distributions"),
@@ -182,8 +179,8 @@ ui <- list(
             width = '100%',
             p(tags$strong('Definition:'), 'Conditioning about one of the variables in a joint distribution involves analyzing the behavior
               of one of the variables while the other one is being held at a specific value. For example, if we were conditioning about a specific', tags$em('x'),
-              'value, the conditional PDF formula would be as follows:
-              $$P(Y|X = x) = \\frac{P(Y,X = x)}{P(X = x)}$$')
+              'value, the conditional PDF formula of', tags$em('y'),'given (X =', tags$em('x)'), 'would be as follows:
+              $$f_{Y|X}(y|X = x) = \\frac{f_{X,Y}(X,Y)}{f_X(x)}$$')
           ),
           box(
             title = strong("Independence"),
@@ -192,42 +189,27 @@ ui <- list(
             collapsed = TRUE,
             width = '100%',
             p(tags$strong('Definition:'), 'Independence, when it comes to a bivariate distribution, refers to the situation
-              where neither random variable has any influence on the other. Because of this, the marginal PDFs can be easily 
-              separated from the joint PDF in an independent setting since the joint PDF is simply a product of the two marginals. Thus, when
-              a joint PDF is independent, it can be rewritten as: \\[f_{X,Y}(x,y) = f_X(x) * f_Y(y)\\]',
-              'Conditioning can also help us to determine variable interdependence. For instance, two variables are also independent when we are conditioning about P(X=x)
-              if this conditional PDF is equal to the the marginal of', tags$em('y'), '. This is represented below:
-              \\[f_{Y|X}(y|X = x) = f_Y(y)\\]')
-          ),
-          box(
-            title = strong("Interpreting Plots"),
-            status = "primary",
-            collapsible = TRUE,
-            collapsed = TRUE,
-            width = '100%',
-            p(tags$strong('Contour Plot:'), 'A contour plot is a gradient representation of a function
-              over 2D space. There is a contour plot on the first Explore page that shows the density spread
-              of the joint PDF, which means it is simply an aerial view. As the correlation slider is adjusted
-              you can see how the correlation gradient between the variables changes.'
-              )
+              where neither random variable has any influence on the other. Two variables', tags$em('x'), 'and', tags$em('y'), 'are independent when their joint distribution 
+              can be factored into the PDF function of', tags$em('x'),'times the PDF function of', tags$em('y,'),'which becomes: \\[f_{X,Y}(x,y) = f_X(x) * f_Y(y)\\]',
+              'Conditioning can also help us to determine variable interdependence. For instance, when two variables are independent, the conditional and marginal PDFs are equal. 
+              This is represented below: \\[f_{Y|X}(y|X = x) = f_Y(y)\\]')
           )
         ),
         #### Note: you must have at least one of the following pages. You might
         #### have more than one type and/or more than one of the same type. This
         #### will be up to you and the goals for your app.
-        #### Set up joint vs marginals Page ----
+        #### Set up joint and marginals Page ----
         tabItem(
           tabName = "explore1",
           withMathJax(),
-          h2("Joint vs Marginal PDFs"),
+          h2("Joint and Marginal PDFs"),
           p('This explore page features the 3D joint PDF of two independent standard normal
             random variables with some correlation value', HTML("&#x03C1;"), 'that can be
             adjusted using the slider. The joint PDF graph also features the normalized
             marginal PDFs of each random variable. The graph on the bottom is a contour plot that shows
             an aerial view of the spread of the joint distribution as the correlation slider
             is adjusted. Use the slider to adjust the correlation value and see how both plots respond,
-            then use the buttons to change between the marginal perspectives or reset the view. You can also
-            use the play button beneath the correlation slider to see an animation of an increasing correlation value.'),
+            then use the buttons to change between the marginal perspectives or reset the view.'),
           p(tags$strong('Guiding Questions: How do the marginal and joint PDFs change as the correlation value is adjusted?
                         What does that tell you about the Bivariate Normal distribution?')),
           fluidRow(
@@ -240,8 +222,7 @@ ui <- list(
                   min = -0.9,
                   max = 0.9,
                   value = 0,
-                  step = 0.01,
-                  animate = animationOptions(interval = 250, playButton = icon('forward'))),
+                  step = 0.01),
                 bsButton(
                   inputId = "marg_y", 
                   label = "Marginal of Y", 
@@ -288,8 +269,7 @@ ui <- list(
                   min = -0.9,
                   max = 0.9,
                   value = 0,
-                  step = 0.01,
-                  animate = animationOptions(interval = 250, playButton = icon('forward'))),
+                  step = 0.01),
                 br(),
                 sliderInput(
                   inputId = 'condSliderPos',
@@ -298,9 +278,9 @@ ui <- list(
                   max = 2.5,
                   value = 0,
                   step = 0.1,
-                  animate = animationOptions(interval = 750, playButton = icon('forward'))),
+                  animate = animationOptions(interval = 1500, playButton = icon('forward'))),
                 checkboxInput(inputId = 'condCheckbox', label = 'Show Statistics'),
-                textOutput('showStats')
+                uiOutput('showStats')
               )
             ),
             column(
@@ -332,7 +312,48 @@ ui <- list(
             (v0.61). [R package]. Available from
             https://CRAN.R-project.org/package=shinyBS"
           ),
-          br(),
+          p(
+            class = 'hangingindent',
+            "Carey, R., Hatfield, N. (2023). boastUtils: BOAST utilities. 
+            (v. 0.1.11.3). [R package]. Available from 
+            https://github.com/EducationShinyAppTeam/boastUtils"
+          ),
+          p(
+            class = 'hangingindent',
+            "Chang, W., Cheng, J., Allaire, J., Sievert, C., Schloerke. B., Xie, Y., Allen, J., McPherson, J., Dipert, A., and Borges, B. (2024). 
+            shiny: Web application framework for R. (v. 1.8.1.1). [R package]. 
+            Available from https://CRAN.R-project.org/package=shiny"
+          ),
+          p(
+            class = 'hangingindent',
+            "Chang, W., and Borges Ribeiro, B. (2021). shinydashboard: 
+            Create dashboards with 'Shiny'. (v. 0.7.2). [R package]. Available from 
+            https://CRAN.R-project.org/package=shinydashboard"
+          ),
+          p(
+            class = 'hangingindent',
+            "Perrier, V., Meyer, F., and Granjon, D. (2024). shinyWidgets: 
+            Custom inputs widgets for shiny. (v. 0.8.6). [R package]. Available from 
+            https://CRAN.R-project.org/package=shinyWidgets"
+          ),
+          p(
+            class = 'hangingindent',
+            "R Core Team. (2023). graphics: The R Graphics Package. (v. 4.3.1). 
+            [R package]. Available from 
+            https://cran.r-project.org/package=graphics"
+          ),
+          p(
+            class = 'hangingindent',
+            "Sievert, C. (2023). plotly: Create Interactive Web Graphics via 'plotly.js'. 
+            (v. 4.10.1). [R package]. 
+            Available from https://cran.r-project.org/package=plotly"
+          ),
+          p(
+            class = 'hangingindent',
+            "Wickham, H. (2016). ggplot2: Elegant graphics for data analysis.
+            Springer-Verlag:New York. (v 3.3.6) [R package]. Available from
+            https://ggplot2.tidyverse.org"
+          ),
           br(),
           br(),
           boastUtils::copyrightInfo()
@@ -407,7 +428,7 @@ server <- function(input, output, session) {
       dragmode = FALSE) %>%
       # add marginal paths and scale
       add_paths(x = x, y = -3, z = (1 / sqrt(2 * pi)) * marg(x), hovertext = "Marginal PDF of X", name = 'Marginal PDF of X', line = list(color = 'black', dash = 'dash')) %>%
-      add_paths(x = -3, y = y, z = (1 / sqrt(2 * pi)) * marg(y), hovertext = "Marginal PDF of Y", name = 'Marginal PDF of Y', line = list(color = 'black'))
+      add_paths(x = -3, y = y, z = (1 / sqrt(2 * pi)) * marg(y), hovertext = "Marginal PDF of Y", name = 'Marginal PDF of Y', line = list(color = boastPalette[8]))
     config(plotlyObj, displaylogo = FALSE, displayModeBar = FALSE)
   })
   
@@ -491,7 +512,7 @@ server <- function(input, output, session) {
     corr_grid$z <- corr_joint(grid$x, grid$y, input$correlationSlider)
     corr_z <- matrix(corr_grid$z, nrow = length(x), ncol = length(y))
     filled.contour(x,y,corr_z, asp = 1, color.palette = colorRampPalette(c("darkblue", "cyan", "yellow", "red")),
-                   plot.title = title(main = "Contour Map", xlab = 'x', ylab = 'y'))
+                   plot.title = title(main = "Joint Contour Plot", xlab = 'x', ylab = 'y'))
   })
   
   
@@ -538,7 +559,7 @@ server <- function(input, output, session) {
       labs(
         title = HTML('Conditional PDF at X =', input$condSliderPos), 
         x = "y", y = "Density") +
-      geom_line() +
+      geom_line(color = boastPalette[8]) +
       theme_bw()
     ggplotObj + theme(
       plot.title = element_text(size = 18, hjust = 0.5),
@@ -548,11 +569,11 @@ server <- function(input, output, session) {
       scale_x_continuous(expand = expansion(mult = c(0,0), add = 0))
   })
   
-  output$showStats <- renderText({
+  output$showStats <- renderUI({
     if (input$condCheckbox) {
-      HTML("\\[f_{X,Y}(x)=\\int_{-\\infty}^{\\infty} f_{X,Y}(x,y)dy\\]")
+      HTML('\\[X~\\sim\\text{Distribution}(\\rho)\\]')
     } else {
-      ''
+      HTML('')
     }
   })
 
