@@ -43,7 +43,7 @@ ui <- list(
         menuItem("Prerequisites", tabName = "prerequisites", icon = icon("book")),
         menuItem("Joint and Marginal", tabName = "explore1", icon = icon("wpexplorer")),
         menuItem("Conditioning", tabName = "explore2", icon = icon("wpexplorer")),
-        menuItem("Challenge", tabName = "challenge", icon = icon("gears")),
+        #menuItem("Challenge", tabName = "challenge", icon = icon("gears")),
         menuItem("References", tabName = "references", icon = icon("leanpub"))
       ),
       tags$div(
@@ -68,9 +68,9 @@ ui <- list(
             tags$li("Navigate to the Joint and Marginal tab to work with interactive 3D
                     graphs of the joint and marginal PDFs with the button below."),
             tags$li("Continue on to the Conditioning tab to explore representations
-                    of conditional and joint PDFs to see how they compare."),
-            tags$li("Test your knowledge on the Challenge tab by answering questions
-                    about material involving joint, marginal, and conditional distributions.")
+                    of conditional and joint PDFs to see how they compare.")
+            # tags$li("Test your knowledge on the Challenge tab by answering questions
+            #         about material involving joint, marginal, and conditional distributions.")
           ),
           ##### Go Button--location will depend on your goals
           div(
@@ -98,7 +98,7 @@ ui <- list(
             citeApp(),
             br(),
             br(),
-            div(class = "updated", "Last Update: 10/7/2024 by NP.")
+            div(class = "updated", "Last Update: 10/8/2024 by NP.")
           )
         ),
         #### Set up the Prerequisites Page ----
@@ -122,12 +122,6 @@ ui <- list(
               that comes in half or full size increments), or continuous, where the data can take 
               on any value within a certain interval (like volume or mass). But, in this app, we 
               will be exclusively examining continuous distributions. ',
-              br(),
-              br(),
-              tags$strong("Notation:"), "Distribution notation typically looks like this: \\[X~\\sim\\text{Distribution}(p)\\]
-              where", tags$em('X'), "is the random variable, '~' means 'distributed as', 'Distribution'
-              represents the type of named distribution of the variable, and", tags$em('p'), "represents any parameters
-              necessary for the distribution.",
               br(),
               br(),
               tags$strong("PDF:"), 'A probability density function, or PDF, of a continuous distribution
@@ -179,7 +173,7 @@ ui <- list(
             width = '100%',
             p(tags$strong('Definition:'), 'Conditioning about one of the variables in a joint distribution involves analyzing the behavior
               of one of the variables while the other one is being held at a specific value. For example, if we were conditioning about a specific', tags$em('x'),
-              'value, the conditional PDF formula of', tags$em('y'),'given (X =', tags$em('x)'), 'would be as follows:
+              'value, the conditional PDF formula of', tags$em('y'),'given (X =', tags$em('x'), ') would be as follows:
               $$f_{Y|X}(y|X = x) = \\frac{f_{X,Y}(X,Y)}{f_X(x)}$$')
           ),
           box(
@@ -218,7 +212,7 @@ ui <- list(
               wellPanel(
                 sliderInput(
                   inputId = 'correlationSlider',
-                  label = p('Correlation value', HTML("&#x03C1;")),
+                  label = p('Correlation value,', HTML("&#x03C1;")),
                   min = -0.9,
                   max = 0.9,
                   value = 0,
@@ -243,10 +237,10 @@ ui <- list(
             column(
               width = 8,
               uiOutput("normPlot"),
-              p('3d plot caption (color scale represents value of joint density)'),
+              p('3D Joint PDF plot where the color represents the value of the marginal density according to the color scale'),
               align = 'center',
               plotOutput("contourMap", width = "60%"),
-              p('contour plot caption (aerial view of the spread of joint distribution)')
+              p('Contour plot that depicts an aerial view of the joint distribution spread')
             )
           )
         ),
@@ -256,10 +250,10 @@ ui <- list(
           withMathJax(),
           h2("Conditioning"),
           p("This explore page features a 3D graph of the joint PDF of", tags$em('x'), 'and', tags$em('y'), "with a conditional slice at a chosen value
-          of", tags$em('x'), "cutting through it. The conditional PDF of", tags$em('y'), "given (X = ", tags$em('x)'), "is shown below.",
+          of", tags$em('x'), "cutting through it. The conditional PDF of", tags$em('y'), "given (X = ", tags$em('x'), ") is shown below.",
           "The value of", HTML("&#x03C1;") ,"in the joint density and the positioning of the conditioning plane 
           can be adjusted using the sliders on the left. Also utilize the play button below the plane positioning slider to see a moving animation
-            of the conditional slice or click the 'Show statistics' checkbox to see the distribution statistics."),
+            of the conditional slice."),
           p(tags$strong('Guiding Question: How does the conditional PDF respond when the conditoning
                         plane slider is shifted with and without a correlation value?')),
           fluidRow(
@@ -268,7 +262,7 @@ ui <- list(
               wellPanel(
                 sliderInput(
                   inputId = 'corrVal',
-                  label = p('Correlation value', HTML("&#x03C1;")),
+                  label = p('Correlation value,', HTML("&#x03C1;")),
                   min = -0.9,
                   max = 0.9,
                   value = 0,
@@ -276,37 +270,35 @@ ui <- list(
                 br(),
                 sliderInput(
                   inputId = 'condSliderPos',
-                  label = p('Conditional plane (X =', tags$em('x)')),
+                  label = p('Conditional plane (X =', tags$em('x'), ')'),
                   min = -2.5,
                   max = 2.5,
                   value = 0,
                   step = 0.1,
-                  animate = animationOptions(interval = 2000, playButton = icon('forward'))),
-                checkboxInput(inputId = 'condCheckbox', label = 'Show statistics'),
-                uiOutput('showStats')
+                  animate = animationOptions(interval = 2000, playButton = icon('forward')))
               )
             ),
             column(
               width = 8,
               uiOutput("condCorr"),
-              p('Caption: Wire frame diagram of x and y, the blue shaded region shows 
-                \\[X~\\sim\\text{Distribution}(p)\\]'),
+              uiOutput('page2Caption1'),
+              br(),
               align = 'center',
               plotOutput('condCorrPlane', width = '60%'),
-              p('plane plot caption (not cond dist, shows joint density at slice)')
+              uiOutput('page2Caption2')
             )
           )
         ),
         #### Set up a Challenge Page ----
-        tabItem(
-          tabName = "challenge",
-          withMathJax(),
-          h2("Challenge Yourself"),
-          p("This page will have single questions and the user can move onto
-            the next level when they get it right (instead of having one large quiz).
-            I think the challenge will consist of maybe five questions from a question
-            bank of maybe ten or so general questions.")
-        ),
+        # tabItem(
+        #   tabName = "challenge",
+        #   withMathJax(),
+        #   h2("Challenge Yourself"),
+        #   p("This page will have single questions and the user can move onto
+        #     the next level when they get it right (instead of having one large quiz).
+        #     I think the challenge will consist of maybe five questions from a question
+        #     bank of maybe ten or so general questions.")
+        # ),
         #### Set up the References Page ----
         tabItem(
           tabName = "references",
@@ -399,7 +391,7 @@ server <- function(input, output, session) {
   
   ## Create Explore Page Graphs ----
   
-  # create norm functions
+  # create joint/marg functions
   joint_normal <- function(x,y) {
     (1 / (2 * pi)) * exp(-0.5 * (x^2 + y^2))
   }
@@ -407,7 +399,7 @@ server <- function(input, output, session) {
     (1 / sqrt(2 * pi)) * exp(-0.5 * x^2)
   }
   
-  # create correlated pdf function and grid
+  # create correlated pdf function
   corr_joint <- function(x,y,p) {
     (1 / ((2 * pi) * sqrt(1-p^2))) * exp(-0.5 * (x^2 + y^2 - 2*p * x * y) / (1-p^2))
   }
@@ -552,7 +544,7 @@ server <- function(input, output, session) {
         yaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 1), ticktext = as.character(seq(-3,3,by = 1)))
       ),
       dragmode = FALSE,
-      title = list(text = 'Conditional PDF Plot',
+      title = list(text = 'Joint PDF Plot',
                    font = list(size = 18),
                    x = 0.52,
                    y = 0.95))
@@ -586,22 +578,30 @@ server <- function(input, output, session) {
       labs(
         title = HTML('Conditional PDF at X =', input$condSliderPos), 
         x = "y", y = "Density") +
-      geom_line(color = boastPalette[8]) +
+      geom_line(color = boastPalette[8], linewidth = 1.25) +
       theme_bw()
     ggplotObj + theme(
-      plot.title = element_text(size = 18, hjust = 0.5),
-      axis.title = element_text(size = 14),
-      axis.text = element_text(size = 12)
+      plot.title = element_text(size = 22),
+      axis.title = element_text(size = 18),
+      axis.text = element_text(size = 16)
     ) +
-      scale_x_continuous(expand = expansion(mult = c(0,0), add = 0))
+      scale_x_continuous(expand = expansion(mult = c(0,0), add = 0)) +
+      scale_y_continuous(expand = expansion(mult = c(0, 0.01), add = c(0,0.03)))
   })
   
-  output$showStats <- renderUI({
-    if (input$condCheckbox) {
-      withMathJax(
-      HTML('\\[(X,Y)~\\sim\\text{Normal}(\\mu_X, \\mu_Y, \\sigma_X^2, \\sigma_Y^2, \\rho)\\]'))
-    } 
+  output$page2Caption1 <- renderUI({
+    withMathJax(
+    p('Wire frame diagram of x and y, the blue shaded region shows the joint density:
+            \\[f_{X,Y}(',input$condSliderPos,', y)\\]'))
   })
+  
+  output$page2Caption2 <- renderUI({
+    withMathJax(
+      p('This plot represents the conditional PDF:
+        \\[f_{Y|X}(Y|', input$condSliderPos,') = \\frac{f_{X,Y}(',input$condSliderPos,',Y)}{f_X(',input$condSliderPos,')}\\]')
+    )
+  })
+
 
 
 }
