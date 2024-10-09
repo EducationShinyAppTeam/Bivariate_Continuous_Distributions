@@ -110,7 +110,7 @@ ui <- list(
             if necessary. Simply click on the plus/minus sign on each tab to expand/minimize them."),
           br(),
           box(
-            title = strong("Distribution Information and Notation"),
+            title = strong("Distribution Information"),
             status = "primary",
             collapsible = TRUE,
             collapsed = FALSE,
@@ -143,9 +143,9 @@ ui <- list(
             width = '100%',
             p(tags$strong('Definition:'), "A joint density function describes the probability distribution of two or more variables simultaneously. 
             If you were to integrate over all values of the variables, it would equal the total probability space,
-              which is 1. The joint PDF of two variables", tags$em('x'), 'and', tags$em('y'), "can be denoted: \\[f_{X,Y}(x,y)\\]",
+              which is 1. The joint PDF of two variables X and Y can be denoted: \\[f_{X,Y}(x,y)\\]",
               br(),
-              tags$strong("Bivariate Normal:"), 'For the Bivariate Normal setting, both', tags$em('X'), 'and', tags$em('Y'), 'are normally distributed with', HTML("&#x03C1;"), 'being the correlation value.',
+              tags$strong("Bivariate Normal:"), 'For the Bivariate Normal setting, both X and Y are normally distributed with', HTML("&#x03C1;"), 'being the correlation value.',
               'The joint PDF of two random variables that follow a Bivariate Normal distribution is: 
               $$f_{X,Y}(x,y) = \\frac{1}{2\\pi \\sigma_X \\sigma_Y \\sqrt{1 - \\rho^2}} \\exp\\left(-\\frac{1}{2(1 - \\rho^2)}\\left(\\frac{(x - \\mu_X)^2}{\\sigma_X^2} + \\frac{(y - \\mu_Y)^2}{\\sigma_Y^2} - \\frac{2\\rho (x - \\mu_X)(y - \\mu_Y)}{\\sigma_X \\sigma_Y}\\right)\\right)$$')
           ),
@@ -155,13 +155,13 @@ ui <- list(
             collapsible = TRUE,
             collapsed = TRUE,
             width = '100%',
-            p(tags$strong("Definition:"), "Marginal Distributions describe the probability distribution of one of the variables
+            p(tags$strong("Definition:"), "Marginal distributions describe the probability distribution of one of the variables
               within a multivariate setting. For continuous random variables, it is found by integrating the joint PDF with respect 
-              to the other variable(s) to remove it from the equation. For example, the marginal PDF formula of", tags$em('x'), "is:
+              to the other variable(s) to remove them from the equation. For example, the marginal PDF formula of X is:
               \\[f_X(x)=\\int_{-\\infty}^{\\infty} f_{X,Y}(x,y)dy\\]",
               br(),
               tags$strong("Normal Distribution:"), 'When it comes to the Bivariate Normal setting, the marginal distribution
-            is also normally distributed. The formula for the marginal PDF of', tags$em('x'), 'in a Bivariate Normal distribution is: 
+            is also normally distributed. The formula for the marginal PDF of X in a Bivariate Normal distribution is: 
               \\[f_X(x) = \\frac{1}{\\sigma_X \\sqrt{2\\pi}} \\exp\\left(-\\frac{(x-  \\mu_X)^2}{2\\sigma_X^2}\\right)\\]'
             )
           ),
@@ -173,8 +173,8 @@ ui <- list(
             width = '100%',
             p(tags$strong('Definition:'), 'Conditioning about one of the variables in a joint distribution involves analyzing the behavior
               of one of the variables while the other one is being held at a specific value. For example, if we were conditioning about a specific', tags$em('x'),
-              'value, the conditional PDF formula of', tags$em('y'),'given (X =', tags$em('x'), ') would be as follows:
-              $$f_{Y|X}(y|X = x) = \\frac{f_{X,Y}(X,Y)}{f_X(x)}$$')
+              'value, the conditional PDF formula of Y given (X =', tags$em('x'), ') would be as follows:
+              $$f_{Y|X}(y|X = x) = \\frac{f_{X,Y}(x,y)}{f_X(x)}$$')
           ),
           box(
             title = strong("Independence"),
@@ -183,8 +183,8 @@ ui <- list(
             collapsed = TRUE,
             width = '100%',
             p(tags$strong('Definition:'), 'Independence, when it comes to a bivariate distribution, refers to the situation
-              where neither random variable has any influence on the other. Two variables', tags$em('x'), 'and', tags$em('y'), 'are independent when their joint distribution 
-              can be factored into the PDF function of', tags$em('x'),'times the PDF function of', tags$em('y,'),'which becomes: \\[f_{X,Y}(x,y) = f_X(x) * f_Y(y)\\]',
+              where neither random variable has any influence on the other. Two variables X and Y are independent when their joint distribution 
+              can be factored into the PDF function of X times the PDF function of Y which becomes: \\[f_{X,Y}(x,y) = f_X(x) * f_Y(y)\\]',
               'Conditioning can also help us to determine variable interdependence. For instance, when two variables are independent, the conditional and marginal PDFs are equal. 
               This is represented below: \\[f_{Y|X}(y|X = x) = f_Y(y)\\]')
           )
@@ -198,12 +198,12 @@ ui <- list(
           withMathJax(),
           h2("Joint and Marginal PDFs"),
           p('This explore page features the two-dimensional PDF function of two independent standard normal
-            random variables as a 3D plot with some correlation value', HTML("&#x03C1;"), 'that can be
+            random variables as a 3D plot with some correlation value,', HTML("&#x03C1;"), ', that can be
             adjusted using the slider. The joint PDF graph also features the normalized
             marginal PDFs of each random variable. The graph on the bottom is a contour plot that shows
             an aerial view of the spread of the joint distribution as the correlation slider
             is adjusted. Use the slider to adjust the correlation value and see how both plots respond,
-            then use the buttons to change between the marginal perspectives or reset the view.'),
+            then use the buttons to change between the marginal and joint perspectives.'),
           p(tags$strong('Guiding Questions: How do the marginal and joint PDFs change as the correlation value is adjusted?
                         What does that tell you about the Bivariate Normal distribution?')),
           fluidRow(
@@ -229,7 +229,7 @@ ui <- list(
                 ),
                 bsButton(
                   inputId = "defaultView", 
-                  label = "Reset View", 
+                  label = "Joint X,Y View", 
                   size = "large"
                 )
               )
@@ -237,10 +237,11 @@ ui <- list(
             column(
               width = 8,
               uiOutput("normPlot"),
-              p('3D Joint PDF plot where the color represents the value of the marginal density according to the color scale'),
+              p('3D Joint PDF plot where the color represents the value of the joint density according to the color scale. The marginal
+                density scales would peak at 1/root(2π) ≈ 0.399'),
               align = 'center',
               plotOutput("contourMap", width = "60%"),
-              p('Contour plot that depicts an aerial view of the joint distribution spread')
+              p('Contour plot that depicts an aerial view of the joint distribution spread of X and Y')
             )
           )
         ),
@@ -249,8 +250,8 @@ ui <- list(
           tabName = "explore2",
           withMathJax(),
           h2("Conditioning"),
-          p("This explore page features a 3D graph of the joint PDF of", tags$em('x'), 'and', tags$em('y'), "with a conditional slice at a chosen value
-          of", tags$em('x'), "cutting through it. The conditional PDF of", tags$em('y'), "given (X = ", tags$em('x'), ") is shown below.",
+          p("This explore page features a 3D graph of the joint PDF of X and Y with a conditional slice at a chosen value
+          of", tags$em('x'), "cutting through it. The conditional PDF of Y given (X = ", tags$em('x'), ") is shown below.",
           "The value of", HTML("&#x03C1;") ,"in the joint density and the positioning of the conditioning plane 
           can be adjusted using the sliders on the left. Also utilize the play button below the plane positioning slider to see a moving animation
             of the conditional slice."),
@@ -430,7 +431,7 @@ server <- function(input, output, session) {
                    y = 0.95)) %>%
       # add marginal paths and scale
       add_paths(x = x, y = -3, z = (1 / sqrt(2 * pi)) * marg(x), hovertext = "Marginal PDF of X", name = 'Marginal PDF of X', line = list(color = 'black', dash = 'dash')) %>%
-      add_paths(x = -3, y = y, z = (1 / sqrt(2 * pi)) * marg(y), hovertext = "Marginal PDF of Y", name = 'Marginal PDF of Y', line = list(color = boastPalette[8]))
+      add_paths(x = -3, y = y, z = (1 / sqrt(2 * pi)) * marg(y), hovertext = "Marginal PDF of Y", name = 'Marginal PDF of Y', line = list(color = 'black'))
     config(plotlyObj, displaylogo = FALSE, displayModeBar = FALSE)
   })
   
@@ -458,7 +459,7 @@ server <- function(input, output, session) {
                        y = 0.95)) %>%
           # add marginal paths and scale
           add_paths(x = x, y = -3, z = (1 / sqrt(2 * pi)) * marg(x), hovertext = "Marginal PDF of X", name = 'Marginal PDF of X', line = list(color = 'black', dash = 'dash')) %>%
-          add_paths(x = -3, y = y, z = (1 / sqrt(2 * pi)) * marg(y), hovertext = "Marginal PDF of Y", name = 'Marginal PDF of Y', line = list(color = boastPalette[8]))
+          add_paths(x = -3, y = y, z = (1 / sqrt(2 * pi)) * marg(y), hovertext = "Marginal PDF of Y", name = 'Marginal PDF of Y', line = list(color = 'black'))
         config(plotlyObj, displaylogo = FALSE, displayModeBar = FALSE)
       })
     })
@@ -486,7 +487,7 @@ server <- function(input, output, session) {
                        y = 0.95)) %>%
           # add marginal paths and scale
           add_paths(x = x, y = -3, z = (1 / sqrt(2 * pi)) * marg(x), hovertext = "Marginal PDF of X", name = 'Marginal PDF of X', line = list(color = 'black', dash = 'dash')) %>%
-          add_paths(x = -3, y = y, z = (1 / sqrt(2 * pi)) * marg(y), hovertext = "Marginal PDF of Y", name = 'Marginal PDF of Y', line = list(color = boastPalette[8]))
+          add_paths(x = -3, y = y, z = (1 / sqrt(2 * pi)) * marg(y), hovertext = "Marginal PDF of Y", name = 'Marginal PDF of Y', line = list(color = 'black'))
         config(plotlyObj, displaylogo = FALSE, displayModeBar = FALSE)
       })
     })
@@ -512,7 +513,7 @@ server <- function(input, output, session) {
                          y = 0.95)) %>%
             # add marginal paths and scale
             add_paths(x = x, y = -3, z = (1 / sqrt(2 * pi)) * marg(x), hovertext = "Marginal PDF of X", name = 'Marginal PDF of X', line = list(color = 'black', dash = 'dash')) %>%
-            add_paths(x = -3, y = y, z = (1 / sqrt(2 * pi)) * marg(y), hovertext = "Marginal PDF of Y", name = 'Marginal PDF of Y', line = list(color = boastPalette[8]))
+            add_paths(x = -3, y = y, z = (1 / sqrt(2 * pi)) * marg(y), hovertext = "Marginal PDF of Y", name = 'Marginal PDF of Y', line = list(color = 'black'))
           config(plotlyObj, displaylogo = FALSE, displayModeBar = FALSE)
         })
     }
@@ -589,16 +590,18 @@ server <- function(input, output, session) {
       scale_y_continuous(expand = expansion(mult = c(0, 0.01), add = c(0,0.03)))
   })
   
+  
+  # captions
   output$page2Caption1 <- renderUI({
     withMathJax(
-    p('Wire frame diagram of x and y, the blue shaded region shows the joint density:
-            \\[f_{X,Y}(',input$condSliderPos,', y)\\]'))
+    p('Wire frame diagram of the joint density of X,Y, the blue shaded region shows 
+    the joint density when X =', input$condSliderPos,': \\[f_{X,Y}(',input$condSliderPos,', y)\\]'))
   })
   
   output$page2Caption2 <- renderUI({
     withMathJax(
       p('This plot represents the conditional PDF:
-        \\[f_{Y|X}(Y|', input$condSliderPos,') = \\frac{f_{X,Y}(',input$condSliderPos,',Y)}{f_X(',input$condSliderPos,')}\\]')
+        \\[f_{Y|X}(y|', input$condSliderPos,') = \\frac{f_{X,Y}(',input$condSliderPos,',y)}{f_X(',input$condSliderPos,')}\\]')
     )
   })
 

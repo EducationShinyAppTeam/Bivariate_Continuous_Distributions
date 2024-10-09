@@ -10,10 +10,9 @@ Authors@R: c(
 Chapter: Chapter 5A - Probability
 Description: This app is focused on exploring bivariate continuous distributions and their joint, marginal, and conditional probability density functions.
 LearningObjectives: c(
-    "The student will learn how bivariate continuous distributions appear in the real-world.",
     "The student will learn to understand how the joint and marginal PDF graphs compare within bivariate continuous distributions.",
     "The student will learn how and why to condition variables in bivariate continuous distributions.",
-    "The student will learn how parameters and independence affect the shape of the PDF graphs."
+    "The student will learn how parameter adjustments affect independence between variables."
   )
 DisplayMode: Normal
 URL: https://psu-eberly.shinyapps.io/Sample_App
