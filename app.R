@@ -98,7 +98,7 @@ ui <- list(
             citeApp(),
             br(),
             br(),
-            div(class = "updated", "Last Update: 10/8/2024 by NP.")
+            div(class = "updated", "Last Update: 10/21/2024 by NP.")
           )
         ),
         #### Set up the Prerequisites Page ----
@@ -197,51 +197,76 @@ ui <- list(
           tabName = "explore1",
           withMathJax(),
           h2("Joint and Marginal PDFs"),
-          p('This explore page features the two-dimensional PDF function of two independent standard normal
+          tabsetPanel(
+            type = 'tabs',
+            tabPanel(
+              title = 'Normal',
+              br(),
+              p('This explore page features the two-dimensional PDF function of two independent standard normal
             random variables as a 3D plot with some correlation value,', HTML("&#x03C1;"), ', that can be
             adjusted using the slider. The joint PDF graph also features the normalized
             marginal PDFs of each random variable. The graph on the bottom is a contour plot that shows
             an aerial view of the spread of the joint distribution as the correlation slider
             is adjusted. Use the slider to adjust the correlation value and see how both plots respond,
             then use the buttons to change between the marginal and joint perspectives.'),
-          p(tags$strong('Guiding Questions: How do the marginal and joint PDFs change as the correlation value is adjusted?
+              p(tags$strong('Guiding Questions: How do the marginal and joint PDFs change as the correlation value is adjusted?
                         What does that tell you about the Bivariate Normal distribution?')),
-          fluidRow(
-            column(
-              width = 4,
-              wellPanel(
-                sliderInput(
-                  inputId = 'correlationSlider',
-                  label = p('Correlation value,', HTML("&#x03C1;")),
-                  min = -0.9,
-                  max = 0.9,
-                  value = 0,
-                  step = 0.01),
-                bsButton(
-                  inputId = "marg_y", 
-                  label = "Marginal of Y", 
-                  size = "large"
+              fluidRow(
+                column(
+                  width = 4,
+                  wellPanel(
+                    sliderInput(
+                      inputId = 'correlationSlider',
+                      label = p('Correlation value,', HTML("&#x03C1;")),
+                      min = -0.9,
+                      max = 0.9,
+                      value = 0,
+                      step = 0.05),
+                    bsButton(
+                      inputId = "marg_y", 
+                      label = "Marginal of Y", 
+                      size = "large"
+                    ),
+                    bsButton(
+                      inputId = "marg_x", 
+                      label = "Marginal of X", 
+                      size = "large"
+                    ),
+                    bsButton(
+                      inputId = "defaultView", 
+                      label = "Joint X,Y View", 
+                      size = "large"
+                    )
+                  )
                 ),
-                bsButton(
-                  inputId = "marg_x", 
-                  label = "Marginal of X", 
-                  size = "large"
-                ),
-                bsButton(
-                  inputId = "defaultView", 
-                  label = "Joint X,Y View", 
-                  size = "large"
+                column(
+                  width = 8,
+                  uiOutput("normPlot"),
+                  p('3D Joint PDF plot where the color represents the value of the joint density according to the color scale. The marginal
+                density scales would peak at 1/root(2π) ≈ 0.399'),
+                  align = 'center',
+                  plotOutput("contourMap", width = "60%"),
+                  p('Contour plot that depicts an aerial view of the joint distribution spread of X and Y')
                 )
               )
             ),
-            column(
-              width = 8,
-              uiOutput("normPlot"),
-              p('3D Joint PDF plot where the color represents the value of the joint density according to the color scale. The marginal
-                density scales would peak at 1/root(2π) ≈ 0.399'),
-              align = 'center',
-              plotOutput("contourMap", width = "60%"),
-              p('Contour plot that depicts an aerial view of the joint distribution spread of X and Y')
+            tabPanel(
+              title = 'Exponential/Gamma',
+              br(),
+              p('X = the number of minutes that the customer spends on the call including both waiting in the queue for service and ten receiving service by the IRS staff.', br(), ' 
+                Y = the amount of time in the queue.', br(),
+                'Thus,  X-Y is the amount of time they actually talk to the IRS staff which averages about 20 minutes at any time.', br(), 
+                'Suppose the joint density function of X and Y is given by f(x,y) = 𝛌µ*exp(-(µ-𝛌)y-µx) for 0≤y≤x≤∞ (and = 0 otherwise)', br(), 
+                'Here 1/µ is the mean time in the queue  (typically this average is around 2 or 3 minutes but can be higher on certain times of the day and much higher at certain times of the year, and 1/𝛌 is the mean time talking to IRS staff.'),
+              fluidRow(
+                column(
+                  width = 4
+                ),
+                column(
+                  width = 8,
+                  uiOutput("expoPlot"),
+                )
+              )
             )
           )
         ),
@@ -267,7 +292,7 @@ ui <- list(
                   min = -0.9,
                   max = 0.9,
                   value = 0,
-                  step = 0.01),
+                  step = 0.05),
                 br(),
                 sliderInput(
                   inputId = 'condSliderPos',
@@ -285,7 +310,7 @@ ui <- list(
               uiOutput('page2Caption1'),
               br(),
               align = 'center',
-              plotOutput('condCorrPlane', width = '60%'),
+              plotOutput('condCorrPlane'),
               uiOutput('page2Caption2')
             )
           )
@@ -520,7 +545,6 @@ server <- function(input, output, session) {
   )
   
   
-  
   # create contour map
   output$contourMap <- renderPlot({
     corr_grid <- expand.grid(x = x,y = y)
@@ -530,6 +554,25 @@ server <- function(input, output, session) {
                    plot.title = title(main = "Joint Contour Plot", cex.main = 1.4, xlab = 'x', ylab = 'y', cex.lab = 1.5),
                    plot.axes = {axis(1, cex.axis = 1.3); axis(2, cex.axis = 1.3)})
   })
+  
+  
+  #### Expo tab ----
+  
+  # create functions
+  expo_gamma <- function(x,y,lambda,mu) {
+    ifelse(y <= x, lambda*mu*exp(-(mu - lambda)*y - mu*x), 0)
+  }
+  
+  
+  output$expoPlot <- renderUI({
+    x <- seq(0, 30, length.out = 100)
+    y <- seq(0, 10, length.out = 100) 
+    expo_grid <- expand.grid(x = x,y = y)
+    expo_grid$z <- expo_gamma(expo_grid$x, expo_grid$y, lambda = 1/20, mu = 1/3)
+    expo_z <- matrix(expo_grid$z, nrow = length(x), ncol = length(y))
+    plotlyObj <- plot_ly(x = x, y = y, z = expo_z, type = 'surface', hoverinfo = 'x+y+z+text', hovertext = "Expo/Gamma", colorscale = 'Jet')
+  })
+  
   
   
   #### conditional w/ correlation ----
@@ -561,18 +604,23 @@ server <- function(input, output, session) {
       showscale = FALSE,
       hovertext = "Conditional Plane")
     # add mesh effect
+    if (abs(input$corrVal) > 0.5){
+      size_arg = 0.3
+    } else{
+      size_arg = 0.5
+    }
     plotlyObj <- plotlyObj %>% add_surface(x = ~x, y = ~y, opacity = 0, showscale = FALSE, 
                                            contours = list(
-                                             x = list(show = TRUE, color = 'grey30', width = 1, start = -3, end = 3, size = 0.5),
-                                             y = list(show = TRUE, color = 'grey30', width = 1, start = -3, end = 3, size = 0.5)
+                                             x = list(show = TRUE, color = 'grey30', width = 1, start = -3, end = 3, size = size_arg),
+                                             y = list(show = TRUE, color = 'grey30', width = 1, start = -3, end = 3, size = size_arg)
                                            ))
     config(plotlyObj, displaylogo = FALSE, displayModeBar = FALSE)
   })
   
   # plane subplot
   output$condCorrPlane <- renderPlot({
-    x <- seq(-3, 3, length.out = 125)
-    y <- seq(-3, 3, length.out = 125) 
+    x <- seq(-4.5, 4.5, length.out = 125)
+    y <- seq(-4.5, 4.5, length.out = 125) 
     cond_z <- corr_joint(input$condSliderPos,y, p = input$corrVal) / marg(input$condSliderPos)
     ggplotObj <- ggplot(data = data.frame(y = y, cond_z = cond_z), 
                         mapping = aes(x = y, y = cond_z)) +
@@ -586,7 +634,7 @@ server <- function(input, output, session) {
       axis.title = element_text(size = 18),
       axis.text = element_text(size = 16)
     ) +
-      scale_x_continuous(expand = expansion(mult = c(0,0), add = 0)) +
+      scale_x_continuous(expand = expansion(mult = c(0,0), add = 0), limits = c(-4.5,4.5)) +
       scale_y_continuous(expand = expansion(mult = c(0, 0.01), add = c(0,0.03)))
   })
   
