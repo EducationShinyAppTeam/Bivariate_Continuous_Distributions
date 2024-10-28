@@ -242,8 +242,7 @@ ui <- list(
                 column(
                   width = 8,
                   uiOutput("normPlot"),
-                  p('3D Joint PDF plot where the color represents the value of the joint density according to the color scale. The marginal
-                density scales would peak at 1/√(2π) ≈ 0.399'),
+                  uiOutput('page1Caption1'),
                   align = 'center',
                   plotOutput("contourMap", width = "60%"),
                   p('Contour plot that depicts an aerial view of the joint distribution spread of X and Y')
@@ -253,18 +252,37 @@ ui <- list(
             tabPanel(
               title = 'Exponential/Gamma',
               br(),
-              p('X = the number of minutes that the customer spends on the call including both waiting in the queue for service and ten receiving service by the IRS staff.', br(), ' 
+              p('X = the number of minutes that the customer spends on the call including both waiting in the queue for service and then receiving service by the IRS staff.', br(), ' 
                 Y = the amount of time in the queue.', br(),
                 'Thus,  X-Y is the amount of time they actually talk to the IRS staff which averages about 20 minutes at any time.', br(), 
                 'Suppose the joint density function of X and Y is given by f(x,y) = 𝛌µ*exp(-(µ-𝛌)y-µx) for 0≤y≤x≤∞ (and = 0 otherwise)', br(), 
                 'Here 1/µ is the mean time in the queue  (typically this average is around 2 or 3 minutes but can be higher on certain times of the day and much higher at certain times of the year, and 1/𝛌 is the mean time talking to IRS staff.'),
+              p(tags$strong('Guiding Question: ...')),
               fluidRow(
                 column(
-                  width = 4
+                  width = 4,
+                  wellPanel(
+                    sliderInput(
+                      inputId = 'lambdaSlider',
+                      label = p('Mean time talking to staff, 1/', HTML("&#x03BB;")),
+                      min = -0.9,
+                      max = 0.9,
+                      value = 0,
+                      step = 0.05),
+                    br(),
+                    sliderInput(
+                      inputId = 'muSlider',
+                      label = p('Mean time in queue, 1/', HTML("&#x03BC;")),
+                      min = -0.9,
+                      max = 0.9,
+                      value = 0,
+                      step = 0.05)
+                  )
                 ),
                 column(
                   width = 8,
-                  uiOutput("expoPlot")
+                  uiOutput("expoPlot"),
+                  uiOutput("expoPlot2")
                 )
               )
             )
@@ -301,10 +319,9 @@ ui <- list(
                   max = 2.5,
                   value = 0,
                   step = 0.1,
-                  animate = animationOptions(interval = 2000, playButton = icon('forward'))),
-                align = 'center',
-                uiOutput('page2Caption1')
-              )
+                  animate = animationOptions(interval = 2000, playButton = icon('forward')))
+              ),
+              uiOutput('page2Caption1')
             ),
             column(
               width = 8,
@@ -431,15 +448,45 @@ server <- function(input, output, session) {
   }
   
   
-  # create xy grid then expand to 3d and apply joint function
+  # create reactive elements for perspective changes
+  view <- reactiveVal('3D')
+  observeEvent(
+    eventExpr = input$defaultView,
+    handlerExpr = {
+      view('3D')
+    })
+  observeEvent(
+    eventExpr = input$marg_x,
+    handlerExpr = {
+      view('marg_x')
+    })
+  observeEvent(
+    eventExpr = input$marg_y,
+    handlerExpr = {
+      view('marg_y')
+    })
+  
+  output$normPlot <- renderUI({
+    if (view() == "3D") {
+      uiOutput('plotly_3d')
+    } else if (view() == 'marg_x') {
+      plotOutput('marginal_x')
+    } else if (view() == 'marg_y') {
+      plotOutput('marginal_y')
+    }
+  })
+  
+  # create xy grid then create grid and apply joint function
   x <- seq(-3, 3, length.out = 50)
   y <- seq(-3, 3, length.out = 50) 
   grid <- expand.grid(x = x,y = y)
   grid$z <- joint_normal(grid$x, grid$y)
   z <- matrix(grid$z, nrow = length(x), ncol = length(y))
   
-  #### 3d plot w/ correlation----
-  output$normPlot <- renderUI({
+  
+  #### Joint vs Marginal Plots ----
+  # 3d plot w/ correlation
+  output$plotly_3d <- renderUI({
     corr_grid <- expand.grid(x = x,y = y)
     corr_grid$z <- corr_joint(grid$x, grid$y, input$correlationSlider)
     corr_z <- matrix(corr_grid$z, nrow = length(x), ncol = length(y))
@@ -460,85 +507,45 @@ server <- function(input, output, session) {
     config(plotlyObj, displaylogo = FALSE, displayModeBar = FALSE)
   })
   
-  #### Button Plots ----
   # marginal of y view
-  observeEvent(
-    eventExpr = input$marg_y, 
-    handlerExpr = {
-      output$normPlot <- renderPlot({
-        y <- seq(-4.5, 4.5, length.out = 125)
-        z <- marg(y)
-        ggplotObj <- ggplot(data = data.frame(y = y, z = z), 
-                            mapping = aes(x = y, y = z)) +
-          labs(
-            title = 'Marginal PDF of Y', 
-            x = "y", y = "Density") +
-          geom_line(color = 'black', linewidth = 1.25) +
-          theme_bw()
-        ggplotObj + theme(
-          plot.title = element_text(size = 22),
-          axis.title = element_text(size = 18),
-          axis.text = element_text(size = 16))
-        # +
-        #   scale_x_continuous(expand = expansion(mult = c(0,0), add = 0), limits = c(-4.5,4.5)) +
-        #   scale_y_continuous(expand = expansion(mult = c(0, 0.01), add = c(0,0.03)))
-      })
-    })
+  output$marginal_y <- renderPlot({
+    y <- seq(-4.5, 4.5, length.out = 125)
+    z <- marg(y)
+    ggplotObj <- ggplot(data = data.frame(y = y, z = z), 
+                        mapping = aes(x = y, y = z)) +
+      labs(
+        title = 'Marginal PDF of Y', 
+        x = "y", y = "Density") +
+      geom_line(color = 'black', linewidth = 1.25) +
+      theme_bw()
+    ggplotObj + theme(
+      plot.title = element_text(size = 22),
+      axis.title = element_text(size = 18),
+      axis.text = element_text(size = 16)
+      ) +
+    scale_x_continuous(expand = expansion(mult = c(0,0), add = 0), limits = c(-4.5,4.5)) +
+    scale_y_continuous(expand = expansion(mult = c(0, 0.01), add = c(0,0.03)))
+  })
   
   # marginal of x view
-  observeEvent(
-    eventExpr = input$marg_x, 
-    handlerExpr = {
-      output$normPlot <- renderUI({
-        corr_grid <- expand.grid(x = x,y = y)
-        corr_grid$z <- corr_joint(grid$x, grid$y, input$correlationSlider)
-        corr_z <- matrix(corr_grid$z, nrow = length(x), ncol = length(y))
-        
-        plotlyObj <- plot_ly(x = x, y = y, z = corr_z, type = 'surface', hoverinfo = 'x+y+z+text', hovertext = "Joint PDF", colorscale = 'Jet') %>%
-          layout(scene = list(
-            zaxis = list(title = "Density", hoverformat = '.3f'),
-            xaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 2), ticktext = as.character(seq(-3,3,by = 2))),
-            yaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 2), ticktext = as.character(seq(-3,3,by = 2))),
-            camera = list(eye = list(x = 0, y = -2.25, z = -0.5))
-          ),
-          dragmode = FALSE,
-          title = list(text = 'Joint PDF Plot',
-                       font = list(size = 18),
-                       x = 0.43,
-                       y = 0.95)) %>%
-          # add marginal paths and scale
-          add_paths(x = x, y = -3, z = (1 / sqrt(2 * pi)) * marg(x), hovertext = "Marginal PDF of X", name = 'Marginal PDF of X', line = list(color = 'black', dash = 'dash')) %>%
-          add_paths(x = -3, y = y, z = (1 / sqrt(2 * pi)) * marg(y), hovertext = "Marginal PDF of Y", name = 'Marginal PDF of Y', line = list(color = 'black'))
-        config(plotlyObj, displaylogo = FALSE, displayModeBar = FALSE)
-      })
-    })
-  
-  # Default view button
-  observeEvent(
-    eventExpr = input$defaultView,
-      handlerExpr = {
-        output$normPlot <- renderUI({
-          corr_grid <- expand.grid(x = x,y = y)
-          corr_grid$z <- corr_joint(grid$x, grid$y, input$correlationSlider)
-          corr_z <- matrix(corr_grid$z, nrow = length(x), ncol = length(y))
-          plotlyObj <- plot_ly(x = x, y = y, z = corr_z, type = 'surface', hoverinfo = 'x+y+z+text', hovertext = "Joint PDF", colorscale = 'Jet') %>%
-            layout(scene = list(
-              zaxis = list(title = "Density", hoverformat = '.3f'),
-              xaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 2), ticktext = as.character(seq(-3,3,by = 2))),
-              yaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 2), ticktext = as.character(seq(-3,3,by = 2)))
-            ),
-            dragmode = FALSE,
-            title = list(text = 'Joint PDF Plot',
-                         font = list(size = 18),
-                         x = 0.43,
-                         y = 0.95)) %>%
-            # add marginal paths and scale
-            add_paths(x = x, y = -3, z = (1 / sqrt(2 * pi)) * marg(x), hovertext = "Marginal PDF of X", name = 'Marginal PDF of X', line = list(color = 'black', dash = 'dash')) %>%
-            add_paths(x = -3, y = y, z = (1 / sqrt(2 * pi)) * marg(y), hovertext = "Marginal PDF of Y", name = 'Marginal PDF of Y', line = list(color = 'black'))
-          config(plotlyObj, displaylogo = FALSE, displayModeBar = FALSE)
-        })
-    }
-  )
+  output$marginal_x <- renderPlot({
+    x <- seq(-4.5, 4.5, length.out = 125)
+    z <- marg(x)
+    ggplotObj <- ggplot(data = data.frame(x = x, z = z), 
+                        mapping = aes(x = x, y = z)) +
+      labs(
+        title = 'Marginal PDF of X', 
+        x = "x", y = "Density") +
+      geom_line(color = 'black', linewidth = 1.25, linetype = 'dashed') +
+      theme_bw()
+    ggplotObj + theme(
+      plot.title = element_text(size = 22),
+      axis.title = element_text(size = 18),
+      axis.text = element_text(size = 16)
+    ) +
+      scale_x_continuous(expand = expansion(mult = c(0,0), add = 0), limits = c(-4.5,4.5)) +
+      scale_y_continuous(expand = expansion(mult = c(0, 0.01), add = c(0,0.03)))
+  })
   
   
   # create contour map
@@ -556,17 +563,26 @@ server <- function(input, output, session) {
   
   # create functions
   expo_gamma <- function(x,y,lambda,mu) {
-    ifelse(y <= x, lambda*mu*exp(-(mu - lambda)*y - mu*x), 0)
+    ifelse(y <= x & x >= 0 & y >= 0, lambda*mu*exp(-(mu - lambda)*y - mu*x), 0)
   }
   
   
   output$expoPlot <- renderUI({
-    x <- seq(0, 30, length.out = 100)
-    y <- seq(0, 10, length.out = 100) 
+    x <- seq(-2,15, length.out = 125)
+    y <- seq(-2,15, length.out = 125) 
     expo_grid <- expand.grid(x = x,y = y)
     expo_grid$z <- expo_gamma(expo_grid$x, expo_grid$y, lambda = 1/20, mu = 1/3)
     expo_z <- matrix(expo_grid$z, nrow = length(x), ncol = length(y))
     plotlyObj <- plot_ly(x = x, y = y, z = expo_z, type = 'surface', hoverinfo = 'x+y+z+text', hovertext = "Expo/Gamma", colorscale = 'Jet')
+  })
+  
+  output$expoPlot2 <- renderUI({
+    y <- seq(-2,15, length.out = 125)
+    x <- seq(-2,15, length.out = 125) 
+    expo_grid <- expand.grid(x = y,y = x)
+    expo_grid$z <- expo_gamma(expo_grid$x, expo_grid$y, lambda = 1/20, mu = 1/3)
+    expo_z <- matrix(expo_grid$z, nrow = length(x), ncol = length(y))
+    plotlyObj <- plot_ly(x = y, y = x, z = t(expo_z), type = 'surface', hoverinfo = 'x+y+z+text', hovertext = "Expo/Gamma", colorscale = 'Jet')
   })
   
   
@@ -636,6 +652,23 @@ server <- function(input, output, session) {
   
   
   # caption text
+  output$page1Caption1 <- renderUI({
+    if (view() == "3D") {
+      uiOutput('joint_caption')
+    } else if (view() == 'marg_x' | view() == 'marg_y') {
+      uiOutput('marginal_caption')
+    } 
+  })
+  
+  output$joint_caption <- renderUI({
+    p('3D Joint PDF plot where the color represents the value of the joint density according to the color scale. The marginal
+                density scales would peak at 1/√(2π) ≈ 0.399')
+  })
+  output$marginal_caption <- renderUI({
+    p('Marginal PDF plot with the true marginal density (non-scaled)')
+  })
+  
+  
   output$page2Caption1 <- renderUI({
     withMathJax(
       p('The top plot is a wire frame diagram of the joint density of X,Y, the blue shaded region shows 
