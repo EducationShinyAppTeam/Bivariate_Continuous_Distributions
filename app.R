@@ -98,7 +98,7 @@ ui <- list(
             citeApp(),
             br(),
             br(),
-            div(class = "updated", "Last Update: 10/21/2024 by NP.")
+            div(class = "updated", "Last Update: 10/28/2024 by NP.")
           )
         ),
         #### Set up the Prerequisites Page ----
@@ -224,17 +224,17 @@ ui <- list(
                       step = 0.05),
                     bsButton(
                       inputId = "marg_y", 
-                      label = "Marginal of Y", 
+                      label = "Marginal PDF of Y", 
                       size = "large"
                     ),
                     bsButton(
                       inputId = "marg_x", 
-                      label = "Marginal of X", 
+                      label = "Marginal PDF of X", 
                       size = "large"
                     ),
                     bsButton(
                       inputId = "defaultView", 
-                      label = "Joint X,Y View", 
+                      label = "Joint X,Y PDF", 
                       size = "large"
                     )
                   )
@@ -250,7 +250,7 @@ ui <- list(
               )
             ),
             tabPanel(
-              title = 'Exponential/Gamma',
+              title = 'Exponential',
               br(),
               p('X = the number of minutes that the customer spends on the call including both waiting in the queue for service and then receiving service by the IRS staff.', br(), ' 
                 Y = the amount of time in the queue.', br(),
@@ -264,19 +264,36 @@ ui <- list(
                   wellPanel(
                     sliderInput(
                       inputId = 'lambdaSlider',
-                      label = p('Mean time talking to staff, 1/', HTML("&#x03BB;")),
-                      min = -0.9,
-                      max = 0.9,
-                      value = 0,
-                      step = 0.05),
+                      label = p('Mean time talking to staff,', HTML("&#x03BB;"), '(mins)'),
+                      min = 1,
+                      max = 40,
+                      value = 20,
+                      step = 1),
                     br(),
                     sliderInput(
                       inputId = 'muSlider',
-                      label = p('Mean time in queue, 1/', HTML("&#x03BC;")),
-                      min = -0.9,
-                      max = 0.9,
-                      value = 0,
-                      step = 0.05)
+                      label = p('Mean time in queue,', HTML("&#x03BC;"), '(mins)'),
+                      min = 0.5,
+                      max = 10,
+                      value = 3,
+                      step = 0.5),
+                    br(),
+                    
+                    bsButton(
+                      inputId = "expo_marg_y", 
+                      label = "Marginal PDF of Y", 
+                      size = "large"
+                    ),
+                    bsButton(
+                      inputId = "expo_marg_x", 
+                      label = "Marginal PDF of X", 
+                      size = "large"
+                    ),
+                    bsButton(
+                      inputId = "expo_defaultView", 
+                      label = "Joint X,Y PDF", 
+                      size = "large"
+                    )
                   )
                 ),
                 column(
@@ -502,8 +519,8 @@ server <- function(input, output, session) {
                    x = 0.43,
                    y = 0.95)) %>%
       # add marginal paths and scale
-      add_paths(x = x, y = -3, z = (1 / sqrt(2 * pi)) * marg(x), hovertext = "Marginal PDF of X", name = 'Marginal PDF of X', line = list(color = 'black', dash = 'dash')) %>%
-      add_paths(x = -3, y = y, z = (1 / sqrt(2 * pi)) * marg(y), hovertext = "Marginal PDF of Y", name = 'Marginal PDF of Y', line = list(color = 'black'))
+      add_paths(x = x, y = -3, z = (1 / sqrt(2 * pi)) * marg(x), hovertext = "Marginal PDF of X", name = '*Marginal PDF of X', line = list(color = 'black', dash = 'dash')) %>%
+      add_paths(x = -3, y = y, z = (1 / sqrt(2 * pi)) * marg(y), hovertext = "Marginal PDF of Y", name = '*Marginal PDF of Y', line = list(color = 'black'))
     config(plotlyObj, displaylogo = FALSE, displayModeBar = FALSE)
   })
   
@@ -515,7 +532,7 @@ server <- function(input, output, session) {
                         mapping = aes(x = y, y = z)) +
       labs(
         title = 'Marginal PDF of Y', 
-        x = "y", y = "Density") +
+        x = "y", y = "Marginal Density") +
       geom_line(color = 'black', linewidth = 1.25) +
       theme_bw()
     ggplotObj + theme(
@@ -535,7 +552,7 @@ server <- function(input, output, session) {
                         mapping = aes(x = x, y = z)) +
       labs(
         title = 'Marginal PDF of X', 
-        x = "x", y = "Density") +
+        x = "x", y = "Marginal Density") +
       geom_line(color = 'black', linewidth = 1.25, linetype = 'dashed') +
       theme_bw()
     ggplotObj + theme(
@@ -563,26 +580,35 @@ server <- function(input, output, session) {
   
   # create functions
   expo_gamma <- function(x,y,lambda,mu) {
-    ifelse(y <= x & x >= 0 & y >= 0, lambda*mu*exp(-(mu - lambda)*y - mu*x), 0)
+    ifelse(y >= x & x >= 0 & y >= 0, lambda*mu*exp(-(mu*y + lambda*x - lambda*y)), 0)
   }
   
   
   output$expoPlot <- renderUI({
-    x <- seq(-2,15, length.out = 125)
-    y <- seq(-2,15, length.out = 125) 
+    x <- seq(0,10, length.out = 125)
+    y <- seq(0,10, length.out = 125) 
     expo_grid <- expand.grid(x = x,y = y)
-    expo_grid$z <- expo_gamma(expo_grid$x, expo_grid$y, lambda = 1/20, mu = 1/3)
+    expo_grid$z <- expo_gamma(expo_grid$x, expo_grid$y, lambda = 1/input$lambdaSlider, mu = 1/input$muSlider)
     expo_z <- matrix(expo_grid$z, nrow = length(x), ncol = length(y))
-    plotlyObj <- plot_ly(x = x, y = y, z = expo_z, type = 'surface', hoverinfo = 'x+y+z+text', hovertext = "Expo/Gamma", colorscale = 'Jet')
+    plotlyObj <- plot_ly(x = x, y = y, z = expo_z, type = 'surface', hoverinfo = 'x+y+z+text', hovertext = "Expo/Gamma", colorscale = 'Jet') %>%
+      layout(scene = list(
+        zaxis = list(title = "Density")
+      ))
   })
   
+  
   output$expoPlot2 <- renderUI({
-    y <- seq(-2,15, length.out = 125)
-    x <- seq(-2,15, length.out = 125) 
-    expo_grid <- expand.grid(x = y,y = x)
-    expo_grid$z <- expo_gamma(expo_grid$x, expo_grid$y, lambda = 1/20, mu = 1/3)
+    x <- seq(0,10, length.out = 125)
+    y <- seq(0,10, length.out = 125) 
+    expo_grid <- expand.grid(x = x,y = y)
+    expo_grid$z <- expo_gamma(expo_grid$y, expo_grid$x, lambda = 1/input$lambdaSlider, mu = 1/input$muSlider)
     expo_z <- matrix(expo_grid$z, nrow = length(x), ncol = length(y))
-    plotlyObj <- plot_ly(x = y, y = x, z = t(expo_z), type = 'surface', hoverinfo = 'x+y+z+text', hovertext = "Expo/Gamma", colorscale = 'Jet')
+    plotlyObj <- plot_ly(x = x, y = y, z = expo_z, type = 'surface', hoverinfo = 'x+y+z+text', hovertext = "Expo/Gamma", colorscale = 'Jet') %>%
+      layout(scene = list(
+        zaxis = list(title = "Density"),
+        xaxis = list(title = 'y'),
+        yaxis = list(title = 'x')
+      ))
   })
   
   
@@ -595,7 +621,7 @@ server <- function(input, output, session) {
     plotlyObj <- plot_ly(x = x, y = y, z = z, type = 'surface', showscale = FALSE, opacity = 0, colorscale = list(c(0, 1), c(boastPalette[8], boastPalette[8])),
                          hoverinfo = 'x+y+z+text', hovertext = "Joint PDF") %>%
       layout(scene = list(
-        zaxis = list(title = "Density", hoverformat = '.3f'),
+        zaxis = list(title = "Joint Density", hoverformat = '.3f'),
         xaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 1), ticktext = as.character(seq(-3,3,by = 1))),
         yaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 1), ticktext = as.character(seq(-3,3,by = 1)))
       ),
@@ -638,7 +664,7 @@ server <- function(input, output, session) {
                         mapping = aes(x = y, y = cond_z)) +
       labs(
         title = HTML('Conditional PDF of Y with X Being Conditioned at', input$condSliderPos), 
-        x = "y", y = "Density") +
+        x = "y", y = "Conditional Density") +
       geom_line(color = boastPalette[8], linewidth = 1.25) +
       theme_bw()
     ggplotObj + theme(
@@ -661,8 +687,8 @@ server <- function(input, output, session) {
   })
   
   output$joint_caption <- renderUI({
-    p('3D Joint PDF plot where the color represents the value of the joint density according to the color scale. The marginal
-                density scales would peak at 1/√(2π) ≈ 0.399')
+    p('3D Joint PDF plot where the color represents the value of the joint density according to the color scale. Note that the marginal*
+                densities are scaled and would peak at 1/√(2π) ≈ 0.399')
   })
   output$marginal_caption <- renderUI({
     p('Marginal PDF plot with the true marginal density (non-scaled)')
@@ -672,10 +698,10 @@ server <- function(input, output, session) {
   output$page2Caption1 <- renderUI({
     withMathJax(
       p('The top plot is a wire frame diagram of the joint density of X,Y, the blue shaded region shows 
-        the joint density when X =', input$condSliderPos,': \\[f_{X,Y}(',input$condSliderPos,', y)\\]'),
+        the joint density when X =', input$condSliderPos,'as represented by: \\[f_{X,Y}(',input$condSliderPos,', y)\\]'),
       
-      p('The plot below represents the conditional PDF:
-        \\[f_{Y|X}(y|', input$condSliderPos,') = \\frac{f_{X,Y}(',input$condSliderPos,',y)}{f_X(',input$condSliderPos,')}\\]')
+      p('The bottom plot represents the conditional PDF of Y given X when X =', input$condSliderPos, 'as represented by:',
+        '\\[f_{Y|X}(y|', input$condSliderPos,') = \\frac{f_{X,Y}(',input$condSliderPos,',y)}{f_X(',input$condSliderPos,')}\\]')
     )
   })
   
