@@ -98,7 +98,7 @@ ui <- list(
             citeApp(),
             br(),
             br(),
-            div(class = "updated", "Last Update: 10/28/2024 by NP.")
+            div(class = "updated", "Last Update: 11/4/2024 by NP.")
           )
         ),
         #### Set up the Prerequisites Page ----
@@ -265,16 +265,16 @@ ui <- list(
                     sliderInput(
                       inputId = 'lambdaSlider',
                       label = p('Mean time talking to staff,', HTML("&#x03BB;"), '(mins)'),
-                      min = 1,
-                      max = 40,
+                      min = 5,
+                      max = 30,
                       value = 20,
                       step = 1),
                     br(),
                     sliderInput(
                       inputId = 'muSlider',
                       label = p('Mean time in queue,', HTML("&#x03BC;"), '(mins)'),
-                      min = 0.5,
-                      max = 10,
+                      min = 0,
+                      max = 15,
                       value = 3,
                       step = 0.5),
                     br(),
@@ -299,7 +299,8 @@ ui <- list(
                 column(
                   width = 8,
                   uiOutput("expoPlot"),
-                  uiOutput("expoPlot2")
+                  align = 'center',
+                  plotOutput("contourMap2", width = "60%"),
                 )
               )
             )
@@ -310,42 +311,98 @@ ui <- list(
           tabName = "explore2",
           withMathJax(),
           h2("Conditioning"),
-          p("This explore page features a 3D graph of the joint PDF of X and Y with a conditional slice at a chosen value
+          tabsetPanel(
+            type = 'tabs',
+            tabPanel(
+              title = 'Normal',
+              br(),
+              p("This explore page features a 3D graph of the joint PDF of X and Y with a conditional slice at a chosen value
           of", tags$em('x'), "cutting through it. The conditional PDF of Y given (X = ", tags$em('x'), ") is shown below.",
-          "The value of", HTML("&#x03C1;") ,"in the joint density and the positioning of the conditioning plane 
+                "The value of", HTML("&#x03C1;") ,"in the joint density and the positioning of the conditioning plane 
           can be adjusted using the sliders on the left. Also utilize the play button below the plane positioning slider to see a moving animation
             of the conditional slice."),
-          p(tags$strong('Guiding Question: How does the conditional PDF respond when the conditoning
+              p(tags$strong('Guiding Question: How does the conditional PDF respond when the conditoning
                         plane slider is shifted with and without a correlation value?')),
-          fluidRow(
-            column(
-              width = 4,
-              wellPanel(
-                sliderInput(
-                  inputId = 'corrVal',
-                  label = p('Correlation value,', HTML("&#x03C1;")),
-                  min = -0.9,
-                  max = 0.9,
-                  value = 0,
-                  step = 0.05),
-                br(),
-                sliderInput(
-                  inputId = 'condSliderPos',
-                  label = p('Conditional plane (X =', tags$em('x'), ')'),
-                  min = -2.5,
-                  max = 2.5,
-                  value = 0,
-                  step = 0.1,
-                  animate = animationOptions(interval = 2000, playButton = icon('forward')))
-              ),
-              uiOutput('page2Caption1')
+              fluidRow(
+                column(
+                  width = 4,
+                  wellPanel(
+                    sliderInput(
+                      inputId = 'corrVal',
+                      label = p('Correlation value,', HTML("&#x03C1;")),
+                      min = -0.9,
+                      max = 0.9,
+                      value = 0,
+                      step = 0.05),
+                    br(),
+                    sliderInput(
+                      inputId = 'condSliderPos',
+                      label = p('Conditional plane (X =', tags$em('x'), ')'),
+                      min = -2.5,
+                      max = 2.5,
+                      value = 0,
+                      step = 0.1,
+                      animate = animationOptions(interval = 2000, playButton = icon('forward')))
+                  ),
+                  uiOutput('page2Caption1')
+                ),
+                column(
+                  width = 8,
+                  uiOutput("condCorr"),
+                  br(),
+                  align = 'center',
+                  plotOutput('condCorrPlane')
+                )
+              )
             ),
-            column(
-              width = 8,
-              uiOutput("condCorr"),
+            tabPanel(
+              title = 'Exponential',
               br(),
-              align = 'center',
-              plotOutput('condCorrPlane')
+              p('blah blah blah'),
+              p(tags$strong('Guiding Question: ...')),
+              fluidRow(
+                column(
+                  width = 4,
+                  wellPanel(
+                    selectInput(inputId = 'condition_x_or_y',
+                                label = 'Choose which variable to condition',
+                                choices = c('x', 'y'),
+                                selected = 'x'),
+                    br(),
+                    sliderInput(
+                      inputId = 'lambdaSlider2',
+                      label = p('Mean time talking to staff,', HTML("&#x03BB;"), '(mins)'),
+                      min = 5,
+                      max = 30,
+                      value = 20,
+                      step = 1),
+                    br(),
+                    sliderInput(
+                      inputId = 'muSlider2',
+                      label = p('Mean time in queue,', HTML("&#x03BC;"), '(mins)'),
+                      min = 0,
+                      max = 15,
+                      value = 3,
+                      step = 0.5),
+                    br(),
+                    sliderInput(
+                      inputId = 'condSliderPos2',
+                      label = p('Conditional plane (X =', tags$em('x'), ')'),
+                      min = 0,
+                      max = 15,
+                      value = 5,
+                      step = 0.1,
+                      animate = animationOptions(interval = 2000, playButton = icon('forward')))
+                  )
+                ),
+                column(
+                  width = 8,
+                  uiOutput("condExpo"),
+                  br(),
+                  align = 'center',
+                  plotOutput('condExpoPlane')
+                )
+              )
             )
           )
         ),
@@ -580,35 +637,96 @@ server <- function(input, output, session) {
   
   # create functions
   expo_gamma <- function(x,y,lambda,mu) {
-    ifelse(y >= x & x >= 0 & y >= 0, lambda*mu*exp(-(mu*y + lambda*x - lambda*y)), 0)
+    result <- lambda*mu*exp(-(mu*y + lambda*x - lambda*y))
+    result[!(y <= x & x >= 0 & y >= 0)] <- 0
+    return(result)
+  }
+  
+  expo_y <- function(y,mu) {
+    mu*exp(-(mu*y))
+  }
+  
+  expo_x <- function(x, lambda) {
+    
   }
   
   
+  # create reactive elements for perspective changes
+  view2 <- reactiveVal('expo_3D')
+  observeEvent(
+    eventExpr = input$expo_defaultView,
+    handlerExpr = {
+      view2('expo_3D')
+    })
+  observeEvent(
+    eventExpr = input$expo_marg_x,
+    handlerExpr = {
+      view2('expo_marg_x')
+    })
+  observeEvent(
+    eventExpr = input$expo_marg_y,
+    handlerExpr = {
+      view2('expo_marg_y')
+    })
+  
   output$expoPlot <- renderUI({
-    x <- seq(0,10, length.out = 125)
-    y <- seq(0,10, length.out = 125) 
-    expo_grid <- expand.grid(x = x,y = y)
-    expo_grid$z <- expo_gamma(expo_grid$x, expo_grid$y, lambda = 1/input$lambdaSlider, mu = 1/input$muSlider)
-    expo_z <- matrix(expo_grid$z, nrow = length(x), ncol = length(y))
-    plotlyObj <- plot_ly(x = x, y = y, z = expo_z, type = 'surface', hoverinfo = 'x+y+z+text', hovertext = "Expo/Gamma", colorscale = 'Jet') %>%
-      layout(scene = list(
-        zaxis = list(title = "Density")
-      ))
+    if (view2() == "expo_3D") {
+      uiOutput('expo_3d')
+    } else if (view2() == 'expo_marg_x') {
+      plotOutput('expo_marginal_x')
+    } else if (view2() == 'expo_marg_y') {
+      plotOutput('expo_marginal_y')
+    }
   })
   
   
-  output$expoPlot2 <- renderUI({
-    x <- seq(0,10, length.out = 125)
-    y <- seq(0,10, length.out = 125) 
+  # create 3d expo plot
+  output$expo_3d <- renderUI({
+    x <- seq(-1,15, length.out = 125)
+    y <- seq(-1,15, length.out = 125) 
     expo_grid <- expand.grid(x = x,y = y)
-    expo_grid$z <- expo_gamma(expo_grid$y, expo_grid$x, lambda = 1/input$lambdaSlider, mu = 1/input$muSlider)
+    expo_grid$z <- expo_gamma(expo_grid$x, expo_grid$y, lambda = 1/input$lambdaSlider, mu = 1/input$muSlider)
     expo_z <- matrix(expo_grid$z, nrow = length(x), ncol = length(y))
-    plotlyObj <- plot_ly(x = x, y = y, z = expo_z, type = 'surface', hoverinfo = 'x+y+z+text', hovertext = "Expo/Gamma", colorscale = 'Jet') %>%
+    plotlyObj <- plot_ly(x = x, y = y, z = t(expo_z), type = 'surface', hoverinfo = 'x+y+z+text', hovertext = "Expo/Gamma", colorscale = 'Jet') %>%
       layout(scene = list(
         zaxis = list(title = "Density"),
-        xaxis = list(title = 'y'),
-        yaxis = list(title = 'x')
+        xaxis = list(title = 'total time (x)'),
+        yaxis = list(title = 'queue time (y)'),
+        camera = list(eye = list(x = 1.5, y = 1.5, z = 1.5))
       ))
+  })
+  
+  # marginal of y view
+  output$expo_marginal_y <- renderPlot({
+    y <- seq(0,10, length.out = 125) 
+    z <- expo_y(y, mu = 1/input$muSlider)
+    ggplotObj <- ggplot(data = data.frame(y = y, z = z), 
+                        mapping = aes(x = y, y = z)) +
+      labs(
+        title = 'Marginal PDF of Y', 
+        x = "y", y = "Marginal Density") +
+      geom_line(color = 'black', linewidth = 1.25) +
+      theme_bw()
+    ggplotObj + theme(
+      plot.title = element_text(size = 22),
+      axis.title = element_text(size = 18),
+      axis.text = element_text(size = 16)
+    ) +
+      scale_x_continuous(expand = expansion(mult = c(0,0), add = 0)) +
+      scale_y_continuous(expand = expansion(mult = c(0, 0.01), add = 0))
+  })
+  
+  
+  # create expo contour map
+  output$contourMap2 <- renderPlot({
+    x <- seq(0,15, length.out = 125)
+    y <- seq(0,15, length.out = 125) 
+    expo_grid <- expand.grid(x = x,y = y)
+    expo_grid$z <- expo_gamma(expo_grid$x, expo_grid$y, lambda = 1/input$lambdaSlider, mu = 1/input$muSlider)
+    expo_z <- matrix(expo_grid$z, nrow = length(x), ncol = length(y))
+    filled.contour(x,y,expo_z, asp = 1, color.palette = colorRampPalette(c("darkblue", "cyan", "yellow", "red")),
+                   plot.title = title(main = "Joint PDF Contour Plot", cex.main = 1.4, xlab = 'total time (x)', ylab = 'queue time (y)', cex.lab = 1.5),
+                   plot.axes = {axis(1, cex.axis = 1.3); axis(2, cex.axis = 1.3)})
   })
   
   
@@ -685,6 +803,52 @@ server <- function(input, output, session) {
       uiOutput('marginal_caption')
     } 
   })
+  
+  
+  
+  #### Exponential Conditional Plots ----
+  output$condExpo <- renderUI({
+    x <- seq(-1,15, length.out = 125)
+    y <- seq(-1,15, length.out = 125) 
+    expo_grid <- expand.grid(x = x,y = y)
+    expo_grid$z <- expo_gamma(expo_grid$x, expo_grid$y, lambda = 1/input$lambdaSlider2, mu = 1/input$muSlider2)
+    expo_z <- matrix(expo_grid$z, nrow = length(x), ncol = length(y))
+    expo_z <- t(expo_z)
+    plotlyObj <- plot_ly(x = x, y = y, z = expo_z, type = 'surface', showscale = FALSE, opacity = 0, colorscale = list(c(0, 1), c(boastPalette[8], boastPalette[8])),
+                         hoverinfo = 'x+y+z+text', hovertext = "Joint PDF") %>%
+      layout(scene = list(
+        zaxis = list(title = "Joint Density", hoverformat = '.3f'),
+        xaxis = list(hoverformat = '.3f'),
+        yaxis = list(hoverformat = '.3f'),
+        camera = list(eye = list(x = 1.5, y = 1.5, z = 1.5))
+      ),
+      dragmode = TRUE,
+      title = list(text = 'Joint PDF Plot',
+                   font = list(size = 18),
+                   x = 0.52,
+                   y = 0.95))
+    # create and add conditional plane
+    x_val <- matrix(input$condSliderPos2, nrow = length(y), ncol = length(expo_z))
+    expo_z[expo_z >= expo_gamma(x = input$condSliderPos2, y, mu = 1/input$muSlider2, lambda = 1/input$lambdaSlider2)] <- 0
+    plotlyObj <- plotlyObj %>% add_surface(
+      x = x_val,
+      y = y,
+      z = expo_z,
+      type = 'surface',
+      opacity = 1,
+      showscale = FALSE,
+      hovertext = "Conditional Plane")
+    # add mesh effect
+    plotlyObj <- plotlyObj %>% add_surface(x = ~x, y = ~y, opacity = 0, showscale = FALSE, 
+                                           contours = list(
+                                             x = list(show = TRUE, color = 'grey30', width = 1, start = -1, end = 15, size = 0.75),
+                                             y = list(show = TRUE, color = 'grey30', width = 1, start = -1, end = 15, size = 0.75)
+                                           ))
+    config(plotlyObj, displaylogo = FALSE, displayModeBar = FALSE)
+  })
+  
+  
+  
   
   output$joint_caption <- renderUI({
     p('3D Joint PDF plot where the color represents the value of the joint density according to the color scale. Note that the marginal*
