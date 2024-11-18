@@ -98,7 +98,7 @@ ui <- list(
             citeApp(),
             br(),
             br(),
-            div(class = "updated", "Last Update: 11/4/2024 by NP.")
+            div(class = "updated", "Last Update: 11/16/2024 by NP.")
           )
         ),
         #### Set up the Prerequisites Page ----
@@ -252,11 +252,17 @@ ui <- list(
             tabPanel(
               title = 'Exponential',
               br(),
-              p('X = the number of minutes that the customer spends on the call including both waiting in the queue for service and then receiving service by the IRS staff.', br(), ' 
-                Y = the amount of time in the queue.', br(),
-                'Thus,  X-Y is the amount of time they actually talk to the IRS staff which averages about 20 minutes at any time.', br(), 
-                'Suppose the joint density function of X and Y is given by f(x,y) = 𝛌µ*exp(-(µ-𝛌)y-µx) for 0≤y≤x≤∞ (and = 0 otherwise)', br(), 
-                'Here 1/µ is the mean time in the queue  (typically this average is around 2 or 3 minutes but can be higher on certain times of the day and much higher at certain times of the year, and 1/𝛌 is the mean time talking to IRS staff.'),
+              p("The exponential section of this explore page features the joint density function of two variables 
+                X and Y in a real-world setting. The top plot is the joint density function of the two variables and the contour plot
+                below it shows the aerial view of the spread of the joint distribution. It deals with customers' time spent on call with the IRS, where X represents 
+                the number of minutes that a customer spends on the call both waiting in the queue for service and then receiving
+                service, and Y represents simply the amount of time in the queue. Thus,  X-Y is the amount of time they actually 
+                talk to the IRS staff which averages about 20 minutes at any time. Suppose the joint density function of X and Y is 
+                given by: \\[f_{X,Y}(x,y) = \\lambda \\mu \\exp\\left(-(\\mu - \\lambda)y - \\mu x)\\right) \\qquad \\text{for} \\ 0 \\leq y \\leq x \\leq \\infty \\quad \\text{(0 otherwise)}\\]
+                Here 1/µ is the mean time in the queue (typically this average is around 2 or 3 minutes but can be higher 
+                on certain times of the day and much higher at certain times of the year, and 1/𝛌 is the mean time talking to IRS staff.
+                You can adjust these parameters using the sliders below and observe how both the joint and marginal PDFs respond.
+                Be sure to utilize the buttons below the sliders to change between joint and marginal PDFs."),
               p(tags$strong('Guiding Question: ...')),
               fluidRow(
                 column(
@@ -385,14 +391,7 @@ ui <- list(
                       value = 3,
                       step = 0.5),
                     br(),
-                    sliderInput(
-                      inputId = 'condSliderPos2',
-                      label = p('Conditional plane (X =', tags$em('x'), ')'),
-                      min = 0,
-                      max = 15,
-                      value = 5,
-                      step = 0.1,
-                      animate = animationOptions(interval = 2000, playButton = icon('forward')))
+                    uiOutput("slider_update")
                   )
                 ),
                 column(
@@ -559,7 +558,7 @@ server <- function(input, output, session) {
   
   
   #### Joint vs Marginal Plots ----
-  # 3d plot w/ correlation
+  # 3d normal plot w/ correlation
   output$plotly_3d <- renderUI({
     corr_grid <- expand.grid(x = x,y = y)
     corr_grid$z <- corr_joint(grid$x, grid$y, input$correlationSlider)
@@ -581,7 +580,7 @@ server <- function(input, output, session) {
     config(plotlyObj, displaylogo = FALSE, displayModeBar = FALSE)
   })
   
-  # marginal of y view
+  # normal - marginal of y view
   output$marginal_y <- renderPlot({
     y <- seq(-4.5, 4.5, length.out = 125)
     z <- marg(y)
@@ -601,7 +600,7 @@ server <- function(input, output, session) {
     scale_y_continuous(expand = expansion(mult = c(0, 0.01), add = c(0,0.03)))
   })
   
-  # marginal of x view
+  # normal - marginal of x view
   output$marginal_x <- renderPlot({
     x <- seq(-4.5, 4.5, length.out = 125)
     z <- marg(x)
@@ -622,7 +621,7 @@ server <- function(input, output, session) {
   })
   
   
-  # create contour map
+  # normal - create contour map
   output$contourMap <- renderPlot({
     corr_grid <- expand.grid(x = x,y = y)
     corr_grid$z <- corr_joint(grid$x, grid$y, input$correlationSlider)
@@ -646,8 +645,13 @@ server <- function(input, output, session) {
     mu*exp(-(mu*y))
   }
   
-  expo_x <- function(x, lambda) {
-    
+  # need to make two separate cases for when lambda and mu are equal
+  expo_x <- function(x, lambda, mu) {
+    if (lambda == mu) {
+      lambda*mu*x*exp(-mu*x)
+    } else {
+      (lambda*mu/(mu-lambda))*exp(-mu*x)*(1 - exp(-(mu-lambda)*x))
+    }
   }
   
   
@@ -692,11 +696,12 @@ server <- function(input, output, session) {
         zaxis = list(title = "Density"),
         xaxis = list(title = 'total time (x)'),
         yaxis = list(title = 'queue time (y)'),
-        camera = list(eye = list(x = 1.5, y = 1.5, z = 1.5))
+        camera = list(eye = list(x = 1.1, y = 2, z = 1.5))
       ))
   })
   
-  # marginal of y view
+  
+  # expo - marginal of y view
   output$expo_marginal_y <- renderPlot({
     y <- seq(0,10, length.out = 125) 
     z <- expo_y(y, mu = 1/input$muSlider)
@@ -705,6 +710,27 @@ server <- function(input, output, session) {
       labs(
         title = 'Marginal PDF of Y', 
         x = "y", y = "Marginal Density") +
+      geom_line(color = 'black', linewidth = 1.25) +
+      theme_bw()
+    ggplotObj + theme(
+      plot.title = element_text(size = 22),
+      axis.title = element_text(size = 18),
+      axis.text = element_text(size = 16)
+    ) +
+      scale_x_continuous(expand = expansion(mult = c(0,0), add = 0)) +
+      scale_y_continuous(expand = expansion(mult = c(0, 0.01), add = 0))
+  })
+  
+  
+  # expo - marginal of x view
+  output$expo_marginal_x <- renderPlot({
+    x <- seq(0,10, length.out = 125) 
+    z <- expo_x(x, lambda = 1/input$lambdaSlider, mu = 1/input$muSlider)
+    ggplotObj <- ggplot(data = data.frame(x = x, z = z), 
+                        mapping = aes(x = x, y = z)) +
+      labs(
+        title = 'Marginal PDF of X', 
+        x = "x", y = "Marginal Density") +
       geom_line(color = 'black', linewidth = 1.25) +
       theme_bw()
     ggplotObj + theme(
@@ -731,7 +757,7 @@ server <- function(input, output, session) {
   
   
   
-  #### conditional w/ correlation ----
+  #### conditional normal  ----
   output$condCorr <- renderUI({
     grid2 <- expand.grid(x = x,y = y)
     grid2$z <- corr_joint(grid2$x, grid2$y, p = input$corrVal)
@@ -773,7 +799,8 @@ server <- function(input, output, session) {
     config(plotlyObj, displaylogo = FALSE, displayModeBar = FALSE)
   })
   
-  # plane subplot
+  
+  # normal cond plane subplot
   output$condCorrPlane <- renderPlot({
     x <- seq(-4.5, 4.5, length.out = 125)
     y <- seq(-4.5, 4.5, length.out = 125) 
@@ -795,7 +822,7 @@ server <- function(input, output, session) {
   })
   
   
-  # caption text
+  # normal caption text
   output$page1Caption1 <- renderUI({
     if (view() == "3D") {
       uiOutput('joint_caption')
@@ -807,20 +834,31 @@ server <- function(input, output, session) {
   
   
   #### Exponential Conditional Plots ----
+  # update cond plot based on selectinput conditioning x/y
   output$condExpo <- renderUI({
-    x <- seq(-1,15, length.out = 125)
-    y <- seq(-1,15, length.out = 125) 
+    if (input$condition_x_or_y == 'x') {
+      uiOutput('conditioning_x')
+    } else if (input$condition_x_or_y == 'y') {
+      uiOutput('conditioning_y')
+    }
+  })
+  
+  # joint plot when conditioning x
+  output$conditioning_x <- renderUI({
+    x <- seq(-1,15, length.out = 75)
+    y <- seq(-1,15, length.out = 75) 
     expo_grid <- expand.grid(x = x,y = y)
     expo_grid$z <- expo_gamma(expo_grid$x, expo_grid$y, lambda = 1/input$lambdaSlider2, mu = 1/input$muSlider2)
     expo_z <- matrix(expo_grid$z, nrow = length(x), ncol = length(y))
+    # had to transpose because of graph orientation w/ contour map
     expo_z <- t(expo_z)
     plotlyObj <- plot_ly(x = x, y = y, z = expo_z, type = 'surface', showscale = FALSE, opacity = 0, colorscale = list(c(0, 1), c(boastPalette[8], boastPalette[8])),
                          hoverinfo = 'x+y+z+text', hovertext = "Joint PDF") %>%
       layout(scene = list(
         zaxis = list(title = "Joint Density", hoverformat = '.3f'),
-        xaxis = list(hoverformat = '.3f'),
-        yaxis = list(hoverformat = '.3f'),
-        camera = list(eye = list(x = 1.5, y = 1.5, z = 1.5))
+        xaxis = list(title = "total time (x)", hoverformat = '.3f'),
+        yaxis = list(title = "queue time (y)", hoverformat = '.3f'),
+        camera = list(eye = list(x = 1.1, y = 2, z = 1.5))
       ),
       dragmode = TRUE,
       title = list(text = 'Joint PDF Plot',
@@ -847,9 +885,104 @@ server <- function(input, output, session) {
     config(plotlyObj, displaylogo = FALSE, displayModeBar = FALSE)
   })
   
+  # joint plot when conditioning y
+  output$conditioning_y <- renderUI({
+    x <- seq(-1,15, length.out = 75)
+    y <- seq(-1,15, length.out = 75) 
+    expo_grid <- expand.grid(x = x,y = y)
+    expo_grid$z <- expo_gamma(expo_grid$x, expo_grid$y, lambda = 1/input$lambdaSlider2, mu = 1/input$muSlider2)
+    expo_z <- matrix(expo_grid$z, nrow = length(x), ncol = length(y))
+    expo_z <- t(expo_z)
+    plotlyObj <- plot_ly(x = x, y = y, z = expo_z, type = 'surface', showscale = FALSE, opacity = 0, colorscale = list(c(0, 1), c(boastPalette[8], boastPalette[8])),
+                         hoverinfo = 'x+y+z+text', hovertext = "Joint PDF") %>%
+      layout(scene = list(
+        zaxis = list(title = "Joint Density", hoverformat = '.3f'),
+        xaxis = list(title = "total time (x)", hoverformat = '.3f'),
+        yaxis = list(title = "queue time (y)", hoverformat = '.3f'),
+        camera = list(eye = list(x = 1.1, y = 2, z = 1.5))
+      ),
+      dragmode = TRUE,
+      title = list(text = 'Joint PDF Plot',
+                   font = list(size = 18),
+                   x = 0.52,
+                   y = 0.95))
+    # create and add conditional plane
+    y_val <- matrix(input$condSliderPos2, nrow = length(x), ncol = length(expo_z))
+    expo_z[expo_z >= expo_gamma(x = x, y = input$condSliderPos2, mu = 1/input$muSlider2, lambda = 1/input$lambdaSlider2)] <- 0
+    plotlyObj <- plotlyObj %>% add_surface(
+      x = x,
+      y = y_val,
+      z = expo_z,
+      type = 'surface',
+      opacity = 1,
+      showscale = FALSE,
+      hovertext = "Conditional Plane")
+    # add mesh effect
+    plotlyObj <- plotlyObj %>% add_surface(x = ~x, y = ~y, opacity = 0, showscale = FALSE, 
+                                           contours = list(
+                                             x = list(show = TRUE, color = 'grey30', width = 1, start = -1, end = 15, size = 0.75),
+                                             y = list(show = TRUE, color = 'grey30', width = 1, start = -1, end = 15, size = 0.75)
+                                           ))
+    config(plotlyObj, displaylogo = FALSE, displayModeBar = FALSE)
+  })
+  
+  
+  # conditional plane plots
+  # output$condExpoPlane <- renderPlot({
+  #   if (input$condition_x_or_y == 'x') {
+  #     plotOutput('cond_plane_x')
+  #   } else if (input$condition_x_or_y == 'y') {
+  #     plotOutput('cond_plane_y')
+  #   }
+  # })
+  #cond_z <- corr_joint(input$condSliderPos,y, p = input$corrVal) / marg(input$condSliderPos)
+  
+  # conditional pdf of y
+  output$condExpoPlane <- renderPlot({
+    x <- seq(-1,15, length.out = 125)
+    y <- seq(-1,15, length.out = 125) 
+    expo_z <- expo_gamma(input$condSliderPos2, y, lambda = 1/input$lambdaSlider2, mu = 1/input$muSlider2) / expo_x(x = input$condSliderPos2, lambda = 1/input$lambdaSlider2, mu = 1/input$muSlider2)
+    ggplotObj <- ggplot(data = data.frame(y = y, expo_z = expo_z), 
+                        mapping = aes(x = y, y = expo_z)) +
+      labs(
+        title = HTML('Conditional PDF of Y with X Being Conditioned at', input$condSliderPos2), 
+        x = "y", y = "Conditional Density") +
+      geom_line(color = boastPalette[8], linewidth = 1.25) +
+      theme_bw()
+    ggplotObj + theme(
+      plot.title = element_text(size = 22),
+      axis.title = element_text(size = 18),
+      axis.text = element_text(size = 16)
+    ) +
+      scale_x_continuous(expand = expansion(mult = c(0,0), add = 0)) +
+      scale_y_continuous(expand = expansion(mult = c(0, 0.01), add = c(0,0.03)))
+  })
+  
+  
+  # change slider input label based on conditioned variable
+  output$slider_update <- renderUI({
+    if (input$condition_x_or_y == 'x') {
+      sliderInput(
+        inputId = 'condSliderPos2',
+        label = p('Conditional plane (X =', tags$em('x'), ')'),
+        min = 0,
+        max = 15,
+        value = 5,
+        step = 0.1)
+    } else if (input$condition_x_or_y == 'y'){
+      sliderInput(
+        inputId = 'condSliderPos2',
+        label = p('Conditional plane (Y =', tags$em('y'), ')'),
+        min = 0,
+        max = 15,
+        value = 5,
+        step = 0.1)
+    }
+  })
   
   
   
+  # captions
   output$joint_caption <- renderUI({
     p('3D Joint PDF plot where the color represents the value of the joint density according to the color scale. Note that the marginal*
                 densities are scaled and would peak at 1/√(2π) ≈ 0.399')
