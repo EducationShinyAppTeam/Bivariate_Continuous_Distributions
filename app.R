@@ -252,18 +252,18 @@ ui <- list(
             tabPanel(
               title = 'Exponential',
               br(),
-              p("The exponential section of this explore page features the joint density function of two variables 
+              p("The exponential section of this explore page features the joint density function of two exponential variables 
                 X and Y in a real-world setting. The top plot is the joint density function of the two variables and the contour plot
                 below it shows the aerial view of the spread of the joint distribution. It deals with customers' time spent on call with the IRS, where X represents 
                 the number of minutes that a customer spends on the call both waiting in the queue for service and then receiving
                 service, and Y represents simply the amount of time in the queue. Thus,  X-Y is the amount of time they actually 
                 talk to the IRS staff which averages about 20 minutes at any time. Suppose the joint density function of X and Y is 
-                given by: \\[f_{X,Y}(x,y) = \\lambda \\mu \\exp\\left(-(\\mu - \\lambda)y - \\mu x)\\right) \\qquad \\text{for} \\ 0 \\leq y \\leq x \\leq \\infty \\quad \\text{(0 otherwise)}\\]
+                given by: \\[f_{X,Y}(x,y) = \\lambda \\mu \\exp\\left(-(\\mu - \\lambda)y - \\mu x)\\right) \\quad \\text{for} \\ 0 \\leq y \\leq x \\leq \\infty \\quad \\text{(0 otherwise)}\\]
                 Here 1/µ is the mean time in the queue (typically this average is around 2 or 3 minutes but can be higher 
                 on certain times of the day and much higher at certain times of the year, and 1/𝛌 is the mean time talking to IRS staff.
                 You can adjust these parameters using the sliders below and observe how both the joint and marginal PDFs respond.
                 Be sure to utilize the buttons below the sliders to change between joint and marginal PDFs."),
-              p(tags$strong('Guiding Question: ...')),
+              p(tags$strong('Guiding Question: How is the constraint of the domain reflected in the graph of the joint PDF and the contour plot?')),
               fluidRow(
                 column(
                   width = 4,
@@ -273,15 +273,15 @@ ui <- list(
                       label = p('Mean time talking to staff,', HTML("&#x03BB;"), '(mins)'),
                       min = 5,
                       max = 30,
-                      value = 20,
+                      value = 15,
                       step = 1),
                     br(),
                     sliderInput(
                       inputId = 'muSlider',
                       label = p('Mean time in queue,', HTML("&#x03BC;"), '(mins)'),
-                      min = 0,
+                      min = 0.5,
                       max = 15,
-                      value = 3,
+                      value = 2,
                       step = 0.5),
                     br(),
                     
@@ -364,7 +364,12 @@ ui <- list(
             tabPanel(
               title = 'Exponential',
               br(),
-              p('blah blah blah'),
+              p('Now, we can begin conditioning based on the IRS exponential scenario from the Joint and Marginal page.
+              The top plot is the joint density plot of X and Y with a blue conditional slice cutting through it that can be adjusted
+              and the plot below it is the conditional PDF plot. Again, X represents the number of minutes that a customer 
+              spends on the call both waiting in the queue for service and then receiving service, and Y represents the 
+              amount of time in the queue. Utilize the checkbox to choose which variable to condition and then utilize the 
+                sliders to change parameter values along with the positioning of the conditional slice.'),
               p(tags$strong('Guiding Question: ...')),
               fluidRow(
                 column(
@@ -372,7 +377,7 @@ ui <- list(
                   wellPanel(
                     selectInput(inputId = 'condition_x_or_y',
                                 label = 'Choose which variable to condition',
-                                choices = c('x', 'y'),
+                                choices = c("total time (x)" = 'x','queue time (y)' = 'y'),
                                 selected = 'x'),
                     br(),
                     sliderInput(
@@ -380,26 +385,27 @@ ui <- list(
                       label = p('Mean time talking to staff,', HTML("&#x03BB;"), '(mins)'),
                       min = 5,
                       max = 30,
-                      value = 20,
+                      value = 15,
                       step = 1),
                     br(),
                     sliderInput(
                       inputId = 'muSlider2',
                       label = p('Mean time in queue,', HTML("&#x03BC;"), '(mins)'),
-                      min = 0,
+                      min = 0.5,
                       max = 15,
-                      value = 3,
+                      value = 2,
                       step = 0.5),
                     br(),
                     uiOutput("slider_update")
-                  )
+                  ),
+                  uiOutput('page2Caption2')
                 ),
                 column(
                   width = 8,
                   uiOutput("condExpo"),
                   br(),
                   align = 'center',
-                  plotOutput('condExpoPlane')
+                  uiOutput('condExpoPlane')
                 )
               )
             )
@@ -693,11 +699,16 @@ server <- function(input, output, session) {
     expo_z <- matrix(expo_grid$z, nrow = length(x), ncol = length(y))
     plotlyObj <- plot_ly(x = x, y = y, z = t(expo_z), type = 'surface', hoverinfo = 'x+y+z+text', hovertext = "Expo/Gamma", colorscale = 'Jet') %>%
       layout(scene = list(
-        zaxis = list(title = "Density"),
+        zaxis = list(title = "Joint Density"),
         xaxis = list(title = 'total time (x)'),
         yaxis = list(title = 'queue time (y)'),
         camera = list(eye = list(x = 1.1, y = 2, z = 1.5))
-      ))
+      ),
+      title = list(text = 'Joint PDF Plot',
+                   font = list(size = 18),
+                   x = 0.47,
+                   y = 0.95)) %>%
+      config(displaylogo = FALSE, displayModeBar = FALSE, scrollZoom = FALSE)
   })
   
   
@@ -709,7 +720,7 @@ server <- function(input, output, session) {
                         mapping = aes(x = y, y = z)) +
       labs(
         title = 'Marginal PDF of Y', 
-        x = "y", y = "Marginal Density") +
+        x = "queue time (y)", y = "Marginal Density") +
       geom_line(color = 'black', linewidth = 1.25) +
       theme_bw()
     ggplotObj + theme(
@@ -730,7 +741,7 @@ server <- function(input, output, session) {
                         mapping = aes(x = x, y = z)) +
       labs(
         title = 'Marginal PDF of X', 
-        x = "x", y = "Marginal Density") +
+        x = "total time (x)", y = "Marginal Density") +
       geom_line(color = 'black', linewidth = 1.25) +
       theme_bw()
     ggplotObj + theme(
@@ -808,7 +819,7 @@ server <- function(input, output, session) {
     ggplotObj <- ggplot(data = data.frame(y = y, cond_z = cond_z), 
                         mapping = aes(x = y, y = cond_z)) +
       labs(
-        title = HTML('Conditional PDF of Y with X Being Conditioned at', input$condSliderPos), 
+        title = HTML('Conditional PDF of Y with X Equal to', input$condSliderPos), 
         x = "y", y = "Conditional Density") +
       geom_line(color = boastPalette[8], linewidth = 1.25) +
       theme_bw()
@@ -928,35 +939,54 @@ server <- function(input, output, session) {
   
   
   # conditional plane plots
-  # output$condExpoPlane <- renderPlot({
-  #   if (input$condition_x_or_y == 'x') {
-  #     plotOutput('cond_plane_x')
-  #   } else if (input$condition_x_or_y == 'y') {
-  #     plotOutput('cond_plane_y')
-  #   }
-  # })
-  #cond_z <- corr_joint(input$condSliderPos,y, p = input$corrVal) / marg(input$condSliderPos)
+  output$condExpoPlane <- renderUI({
+    if (input$condition_x_or_y == 'x') {
+      plotOutput('cond_pdf_of_y')
+    } else if (input$condition_x_or_y == 'y') {
+      plotOutput('cond_pdf_of_x')
+    }
+  })
   
   # conditional pdf of y
-  output$condExpoPlane <- renderPlot({
+  output$cond_pdf_of_y <- renderPlot({
     x <- seq(-1,15, length.out = 125)
     y <- seq(-1,15, length.out = 125) 
     expo_z <- expo_gamma(input$condSliderPos2, y, lambda = 1/input$lambdaSlider2, mu = 1/input$muSlider2) / expo_x(x = input$condSliderPos2, lambda = 1/input$lambdaSlider2, mu = 1/input$muSlider2)
     ggplotObj <- ggplot(data = data.frame(y = y, expo_z = expo_z), 
                         mapping = aes(x = y, y = expo_z)) +
       labs(
-        title = HTML('Conditional PDF of Y with X Being Conditioned at', input$condSliderPos2), 
-        x = "y", y = "Conditional Density") +
+        title = HTML('Conditional PDF of Y with X Equal to', input$condSliderPos2), 
+        x = "queue time (y)", y = "Conditional Density") +
       geom_line(color = boastPalette[8], linewidth = 1.25) +
       theme_bw()
     ggplotObj + theme(
       plot.title = element_text(size = 22),
       axis.title = element_text(size = 18),
-      axis.text = element_text(size = 16)
-    ) +
+      axis.text = element_text(size = 16)) +
       scale_x_continuous(expand = expansion(mult = c(0,0), add = 0)) +
       scale_y_continuous(expand = expansion(mult = c(0, 0.01), add = c(0,0.03)))
   })
+  
+  # conditional pdf of x
+  output$cond_pdf_of_x <- renderPlot({
+    x <- seq(-1,15, length.out = 125)
+    y <- seq(-1,15, length.out = 125) 
+    expo_z <- expo_gamma(x, y = input$condSliderPos2, lambda = 1/input$lambdaSlider2, mu = 1/input$muSlider2) / expo_y(y = input$condSliderPos2, mu = 1/input$muSlider2)
+    ggplotObj <- ggplot(data = data.frame(x = x, expo_z = expo_z), 
+                        mapping = aes(x = x, y = expo_z)) +
+      labs(
+        title = HTML('Conditional PDF of X with Y Equal to', input$condSliderPos2), 
+        x = "total time (x)", y = "Conditional Density") +
+      geom_line(color = boastPalette[8], linewidth = 1.25) +
+      theme_bw()
+    ggplotObj + theme(
+      plot.title = element_text(size = 22),
+      axis.title = element_text(size = 18),
+      axis.text = element_text(size = 16)) +
+      scale_x_continuous(expand = expansion(mult = c(0,0), add = 0)) +
+      scale_y_continuous(expand = expansion(mult = c(0, 0.01), add = c(0,0.03)))
+  })
+  
   
   
   # change slider input label based on conditioned variable
@@ -968,7 +998,7 @@ server <- function(input, output, session) {
         min = 0,
         max = 15,
         value = 5,
-        step = 0.1)
+        step = 0.5)
     } else if (input$condition_x_or_y == 'y'){
       sliderInput(
         inputId = 'condSliderPos2',
@@ -976,7 +1006,7 @@ server <- function(input, output, session) {
         min = 0,
         max = 15,
         value = 5,
-        step = 0.1)
+        step = 0.5)
     }
   })
   
@@ -999,6 +1029,35 @@ server <- function(input, output, session) {
       
       p('The bottom plot represents the conditional PDF of Y given X when X =', input$condSliderPos, 'as represented by:',
         '\\[f_{Y|X}(y|', input$condSliderPos,') = \\frac{f_{X,Y}(',input$condSliderPos,',y)}{f_X(',input$condSliderPos,')}\\]')
+    )
+  })
+  
+  # need to make two captions for one output due to switching of variable
+  output$page2Caption2 <- renderUI({
+    if (input$condition_x_or_y == 'x') {
+      uiOutput('caption2_conditioning_x')
+    } else if (input$condition_x_or_y == 'y') {
+      uiOutput('caption2_conditioning_y')
+    }
+  })
+  
+  output$caption2_conditioning_x <- renderUI({
+    withMathJax(
+      p('The top plot is a wire frame diagram of the joint density of X,Y, the blue shaded region shows 
+        the joint density when X =', input$condSliderPos2,'as represented by: \\[f_{X,Y}(',input$condSliderPos2,', y)\\]'),
+      
+      p('The bottom plot represents the conditional PDF of Y given X when X =', input$condSliderPos2, 'as represented by:',
+        '\\[f_{Y|X}(y|', input$condSliderPos2,') = \\frac{f_{X,Y}(',input$condSliderPos2,',y)}{f_X(',input$condSliderPos2,')}\\]')
+    )
+  })
+  
+  output$caption2_conditioning_y <- renderUI({
+    withMathJax(
+      p('The top plot is a wire frame diagram of the joint density of X,Y, the blue shaded region shows 
+        the joint density when Y =', input$condSliderPos2,'as represented by: \\[f_{X,Y}(x, ',input$condSliderPos2,')\\]'),
+      
+      p('The bottom plot represents the conditional PDF of X given Y when Y =', input$condSliderPos2, 'as represented by:',
+        '\\[f_{X|Y}(x|', input$condSliderPos2,') = \\frac{f_{X,Y}(y, ',input$condSliderPos2,')}{f_Y(',input$condSliderPos2,')}\\]')
     )
   })
   
