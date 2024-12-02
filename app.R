@@ -898,7 +898,7 @@ server <- function(input, output, session) {
                                              x = list(show = TRUE, color = 'grey30', width = 1, start = -1, end = 15, size = 0.75),
                                              y = list(show = TRUE, color = 'grey30', width = 1, start = -1, end = 15, size = 0.75)
                                            ))
-    config(plotlyObj, displaylogo = FALSE, displayModeBar = TRUE,
+    config(plotlyObj, displaylogo = FALSE, displayModeBar = TRUE, scrollZoom = FALSE,
            modeBarButtonsToRemove = c('toImage', "pan3d", "orbitRotation", "zoom3d", "resetCameraDefault"))
   })
   
@@ -940,7 +940,7 @@ server <- function(input, output, session) {
                                              x = list(show = TRUE, color = 'grey30', width = 1, start = -1, end = 15, size = 0.75),
                                              y = list(show = TRUE, color = 'grey30', width = 1, start = -1, end = 15, size = 0.75)
                                            ))
-    config(plotlyObj, displaylogo = FALSE, displayModeBar = TRUE,
+    config(plotlyObj, displaylogo = FALSE, displayModeBar = TRUE, scrollZoom = FALSE,
            modeBarButtonsToRemove = c('toImage', "pan3d", "orbitRotation", "zoom3d", "resetCameraDefault"))
   })
   
