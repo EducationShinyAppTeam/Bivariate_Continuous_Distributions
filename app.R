@@ -67,8 +67,10 @@ ui <- list(
             tags$li("Review any prerequisite ideas using the Prerequisites tab."),
             tags$li("Navigate to the Joint and Marginal tab to work with interactive 3D
                     graphs of the joint and marginal PDFs with the button below."),
+            tags$li("Explore both the Normal and Exponential sections on the Joint and Marginal tab
+                    to examine two distinctly different contexts with different parameters."),
             tags$li("Continue on to the Conditioning tab to explore representations
-                    of conditional and joint PDFs to see how they compare.")
+                    of conditional and joint PDFs to see how they compare for both contexts.")
             # tags$li("Test your knowledge on the Challenge tab by answering questions
             #         about material involving joint, marginal, and conditional distributions.")
           ),
@@ -98,7 +100,7 @@ ui <- list(
             citeApp(),
             br(),
             br(),
-            div(class = "updated", "Last Update: 11/16/2024 by NP.")
+            div(class = "updated", "Last Update: 12/2/2024 by NP.")
           )
         ),
         #### Set up the Prerequisites Page ----
@@ -252,7 +254,7 @@ ui <- list(
             tabPanel(
               title = 'Exponential',
               br(),
-              p("The exponential section of this explore page features the joint density function of two exponential variables 
+              p("The exponential section of this explore page features an alternative context with the joint density function of two exponential variables 
                 X and Y in a real-world setting. The top plot is the joint density function of the two variables and the contour plot
                 below it shows the aerial view of the spread of the joint distribution. It deals with customers' time spent on call with the IRS, where X represents 
                 the number of minutes that a customer spends on the call both waiting in the queue for service and then receiving
@@ -260,7 +262,7 @@ ui <- list(
                 talk to the IRS staff which averages about 20 minutes at any time. Suppose the joint density function of X and Y is 
                 given by: \\[f_{X,Y}(x,y) = \\lambda \\mu \\exp\\left(-(\\mu - \\lambda)y - \\mu x)\\right) \\quad \\text{for} \\ 0 \\leq y \\leq x \\leq \\infty \\quad \\text{(0 otherwise)}\\]
                 Here 1/µ is the mean time in the queue (typically this average is around 2 or 3 minutes but can be higher 
-                on certain times of the day and much higher at certain times of the year, and 1/𝛌 is the mean time talking to IRS staff.
+                on certain times of the day and much higher at certain times of the year), and 1/𝛌 is the mean time talking to IRS staff.
                 You can adjust these parameters using the sliders below and observe how both the joint and marginal PDFs respond.
                 Be sure to utilize the buttons below the sliders to change between joint and marginal PDFs."),
               p(tags$strong('Guiding Question: How is the constraint of the domain reflected in the graph of the joint PDF and the contour plot?')),
@@ -322,7 +324,7 @@ ui <- list(
             tabPanel(
               title = 'Normal',
               br(),
-              p("This explore page features a 3D graph of the joint PDF of X and Y with a conditional slice at a chosen value
+              p("This explore page features a 3D graph of the joint PDF of independent standard normal random variables X and Y with a conditional slice at a chosen value
           of", tags$em('x'), "cutting through it. The conditional PDF of Y given (X = ", tags$em('x'), ") is shown below.",
                 "The value of", HTML("&#x03C1;") ,"in the joint density and the positioning of the conditioning plane 
           can be adjusted using the sliders on the left. Also utilize the play button below the plane positioning slider to see a moving animation
@@ -364,13 +366,13 @@ ui <- list(
             tabPanel(
               title = 'Exponential',
               br(),
-              p('Now, we can begin conditioning based on the IRS exponential scenario from the Joint and Marginal page.
+              p("Now, let's begin conditioning based on the IRS exponential scenario from the Joint and Marginal page.
               The top plot is the joint density plot of X and Y with a blue conditional slice cutting through it that can be adjusted
               and the plot below it is the conditional PDF plot. Again, X represents the number of minutes that a customer 
               spends on the call both waiting in the queue for service and then receiving service, and Y represents the 
-              amount of time in the queue. Utilize the checkbox to choose which variable to condition and then utilize the 
-                sliders to change parameter values along with the positioning of the conditional slice.'),
-              p(tags$strong('Guiding Question: ...')),
+              amount of time in the queue. Utilize the checkbox to choose which variable to condition and then adjust the 
+                sliders to change parameter values along with the positioning of the conditional slice."),
+              p(tags$strong('Guiding Question: How does the shape of the conditional PDF (bottom plot) change as the conditioning variable', tags$em('x'), 'or', tags$em('y'), 'gets swapped?')),
               fluidRow(
                 column(
                   width = 4,
@@ -573,7 +575,8 @@ server <- function(input, output, session) {
       layout(scene = list(
         zaxis = list(title = "Joint Density", hoverformat = '.3f'),
         xaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 2), ticktext = as.character(seq(-3,3,by = 2))),
-        yaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 2), ticktext = as.character(seq(-3,3,by = 2)))
+        yaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 2), ticktext = as.character(seq(-3,3,by = 2))),
+        camera = list(eye = list(x = 1.5, y = 1.5, z = 1.5))
       ),
       dragmode = FALSE,
       title = list(text = 'Joint PDF Plot',
@@ -638,7 +641,7 @@ server <- function(input, output, session) {
   })
   
   
-  #### Expo tab ----
+  #### Exponential tab ----
   
   # create functions
   expo_gamma <- function(x,y,lambda,mu) {
@@ -697,7 +700,8 @@ server <- function(input, output, session) {
     expo_grid <- expand.grid(x = x,y = y)
     expo_grid$z <- expo_gamma(expo_grid$x, expo_grid$y, lambda = 1/input$lambdaSlider, mu = 1/input$muSlider)
     expo_z <- matrix(expo_grid$z, nrow = length(x), ncol = length(y))
-    plotlyObj <- plot_ly(x = x, y = y, z = t(expo_z), type = 'surface', hoverinfo = 'x+y+z+text', hovertext = "Expo/Gamma", colorscale = 'Jet') %>%
+    # had to transpose z because of graph orientation w/ contour map
+    plotlyObj <- plot_ly(x = x, y = y, z = t(expo_z), type = 'surface', hoverinfo = 'x+y+z+text', hovertext = "Joint PDF", colorscale = 'Jet') %>%
       layout(scene = list(
         zaxis = list(title = "Joint Density"),
         xaxis = list(title = 'total time (x)'),
@@ -708,7 +712,8 @@ server <- function(input, output, session) {
                    font = list(size = 18),
                    x = 0.47,
                    y = 0.95)) %>%
-      config(displaylogo = FALSE, displayModeBar = FALSE, scrollZoom = FALSE)
+      config(displaylogo = FALSE, displayModeBar = TRUE, scrollZoom = FALSE, 
+             modeBarButtonsToRemove = c('toImage', "pan3d", "orbitRotation", "zoom3d", "resetCameraDefault"))
   })
   
   
@@ -777,8 +782,9 @@ server <- function(input, output, session) {
                          hoverinfo = 'x+y+z+text', hovertext = "Joint PDF") %>%
       layout(scene = list(
         zaxis = list(title = "Joint Density", hoverformat = '.3f'),
-        xaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 1), ticktext = as.character(seq(-3,3,by = 1))),
-        yaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 1), ticktext = as.character(seq(-3,3,by = 1)))
+        xaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 2), ticktext = as.character(seq(-3,3,by = 2))),
+        yaxis = list(hoverformat = '.3f', tickvals = seq(-3,3,by = 2), ticktext = as.character(seq(-3,3,by = 2))),
+        camera = list(eye = list(x = 1.5, y = 1.5, z = 1.5))
       ),
       dragmode = FALSE,
       title = list(text = 'Joint PDF Plot',
@@ -861,7 +867,6 @@ server <- function(input, output, session) {
     expo_grid <- expand.grid(x = x,y = y)
     expo_grid$z <- expo_gamma(expo_grid$x, expo_grid$y, lambda = 1/input$lambdaSlider2, mu = 1/input$muSlider2)
     expo_z <- matrix(expo_grid$z, nrow = length(x), ncol = length(y))
-    # had to transpose because of graph orientation w/ contour map
     expo_z <- t(expo_z)
     plotlyObj <- plot_ly(x = x, y = y, z = expo_z, type = 'surface', showscale = FALSE, opacity = 0, colorscale = list(c(0, 1), c(boastPalette[8], boastPalette[8])),
                          hoverinfo = 'x+y+z+text', hovertext = "Joint PDF") %>%
@@ -893,7 +898,8 @@ server <- function(input, output, session) {
                                              x = list(show = TRUE, color = 'grey30', width = 1, start = -1, end = 15, size = 0.75),
                                              y = list(show = TRUE, color = 'grey30', width = 1, start = -1, end = 15, size = 0.75)
                                            ))
-    config(plotlyObj, displaylogo = FALSE, displayModeBar = FALSE)
+    config(plotlyObj, displaylogo = FALSE, displayModeBar = TRUE,
+           modeBarButtonsToRemove = c('toImage', "pan3d", "orbitRotation", "zoom3d", "resetCameraDefault"))
   })
   
   # joint plot when conditioning y
@@ -934,7 +940,8 @@ server <- function(input, output, session) {
                                              x = list(show = TRUE, color = 'grey30', width = 1, start = -1, end = 15, size = 0.75),
                                              y = list(show = TRUE, color = 'grey30', width = 1, start = -1, end = 15, size = 0.75)
                                            ))
-    config(plotlyObj, displaylogo = FALSE, displayModeBar = FALSE)
+    config(plotlyObj, displaylogo = FALSE, displayModeBar = TRUE,
+           modeBarButtonsToRemove = c('toImage', "pan3d", "orbitRotation", "zoom3d", "resetCameraDefault"))
   })
   
   
@@ -995,8 +1002,8 @@ server <- function(input, output, session) {
       sliderInput(
         inputId = 'condSliderPos2',
         label = p('Conditional plane (X =', tags$em('x'), ')'),
-        min = 0,
-        max = 15,
+        min = 0.5,
+        max = 14,
         value = 5,
         step = 0.5)
     } else if (input$condition_x_or_y == 'y'){
@@ -1004,7 +1011,7 @@ server <- function(input, output, session) {
         inputId = 'condSliderPos2',
         label = p('Conditional plane (Y =', tags$em('y'), ')'),
         min = 0,
-        max = 15,
+        max = 14,
         value = 5,
         step = 0.5)
     }
