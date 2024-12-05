@@ -23,7 +23,7 @@ ui <- list(
       tags$li(class = "dropdown", actionLink("info", icon("info"))),
       tags$li(
         class = "dropdown",
-        boastUtils::surveyLink(name = "App_Template")
+        boastUtils::surveyLink(name = "Bivariate_Continuous_Distributions")
       ),
       tags$li(
         class = "dropdown",
@@ -64,9 +64,10 @@ ui <- list(
             "),
           h2("Instructions"),
           tags$ol(
-            tags$li("Review any prerequisite ideas using the Prerequisites tab."),
+            tags$li("Review any prerequisite ideas using the Prerequisites tab, which you can access
+                    using the button below."),
             tags$li("Navigate to the Joint and Marginal tab to work with interactive 3D
-                    graphs of the joint and marginal PDFs with the button below."),
+                    graphs of joint and marginal PDFs."),
             tags$li("Explore both the Normal and Exponential sections on the Joint and Marginal tab
                     to examine two distinctly different contexts with different parameters."),
             tags$li("Continue on to the Conditioning tab to explore representations
@@ -78,10 +79,10 @@ ui <- list(
           div(
             style = "text-align: center;",
             bsButton(
-              inputId = "exploreButton",
-              label = "Explore",
+              inputId = "prerequisitesButton",
+              label = "Prerequisites",
               size = "large",
-              icon = icon("bolt"),
+              icon = icon("book"),
               style = "default"
             )
           ),
@@ -147,7 +148,7 @@ ui <- list(
             If you were to integrate over all values of the variables, it would equal the total probability space,
               which is 1. The joint PDF of two variables X and Y can be denoted: \\[f_{X,Y}(x,y)\\]",
               br(),
-              tags$strong("Bivariate Normal:"), 'For the Bivariate Normal setting, both X and Y are normally distributed with', HTML("&#x03C1;"), 'being the correlation value.',
+              tags$strong("Bivariate Normal:"), 'For the Bivariate Normal setting, both X and Y are normally distributed with \\( \\rho \\) being the correlation value.',
               'The joint PDF of two random variables that follow a Bivariate Normal distribution is: 
               $$f_{X,Y}(x,y) = \\frac{1}{2\\pi \\sigma_X \\sigma_Y \\sqrt{1 - \\rho^2}} \\exp\\left(-\\frac{1}{2(1 - \\rho^2)}\\left(\\frac{(x - \\mu_X)^2}{\\sigma_X^2} + \\frac{(y - \\mu_Y)^2}{\\sigma_Y^2} - \\frac{2\\rho (x - \\mu_X)(y - \\mu_Y)}{\\sigma_X \\sigma_Y}\\right)\\right)$$')
           ),
@@ -204,11 +205,11 @@ ui <- list(
             tabPanel(
               title = 'Normal',
               br(),
-              p('This explore page features the two-dimensional PDF function of two independent standard normal
-            random variables as a 3D plot with some correlation value,', HTML("&#x03C1;"), ', that can be
-            adjusted using the slider. The joint PDF graph also features the normalized
+              p('This explore page features the two-dimensional PDF function of two standard normal
+            random variables as a 3D plot with some correlation value, \\( \\rho \\), that can be
+            adjusted using the slider. The joint PDF graph also features the non-scaled
             marginal PDFs of each random variable. The graph on the bottom is a contour plot that shows
-            an aerial view of the spread of the joint distribution as the correlation slider
+            an aerial view of the joint distribution as the correlation slider
             is adjusted. Use the slider to adjust the correlation value and see how both plots respond,
             then use the buttons to change between the marginal and joint perspectives.'),
               p(tags$strong('Guiding Questions: How do the marginal and joint PDFs change as the correlation value is adjusted?
@@ -219,7 +220,7 @@ ui <- list(
                   wellPanel(
                     sliderInput(
                       inputId = 'correlationSlider',
-                      label = p('Correlation value,', HTML("&#x03C1;")),
+                      label = p('Correlation value, \\( \\rho \\)'),
                       min = -0.9,
                       max = 0.9,
                       value = 0,
@@ -246,25 +247,26 @@ ui <- list(
                   uiOutput("normPlot"),
                   uiOutput('page1Caption1'),
                   align = 'center',
-                  plotOutput("contourMap", width = "60%"),
-                  p('Contour plot that depicts an aerial view of the joint distribution spread of X and Y')
+                  plotOutput("contourMap", width = "100%"),
+                  p('Contour plot that depicts an aerial view of the joint distribution of X and Y')
                 )
               )
             ),
             tabPanel(
               title = 'Exponential',
               br(),
+              withMathJax(
               p("The exponential section of this explore page features an alternative context with the joint density function of two exponential variables 
                 X and Y in a real-world setting. The top plot is the joint density function of the two variables and the contour plot
-                below it shows the aerial view of the spread of the joint distribution. It deals with customers' time spent on call with the IRS, where X represents 
+                below it shows the aerial view of the joint distribution. It deals with customers' time spent on call with the IRS, where X represents 
                 the number of minutes that a customer spends on the call both waiting in the queue for service and then receiving
                 service, and Y represents simply the amount of time in the queue. Thus,  X-Y is the amount of time they actually 
                 talk to the IRS staff which averages about 20 minutes at any time. Suppose the joint density function of X and Y is 
-                given by: \\[f_{X,Y}(x,y) = \\lambda \\mu \\exp\\left(-(\\mu - \\lambda)y - \\mu x)\\right) \\quad \\text{for} \\ 0 \\leq y \\leq x \\leq \\infty \\quad \\text{(0 otherwise)}\\]
-                Here 1/µ is the mean time in the queue (typically this average is around 2 or 3 minutes but can be higher 
-                on certain times of the day and much higher at certain times of the year), and 1/𝛌 is the mean time talking to IRS staff.
+                given by: \\[f_{X,Y}(x,y) = \\lambda \\mu \\exp\\left(-(\\mu - \\lambda)y - \\mu x)\\right) \\] \\[ \\text{for} \\ 0 \\leq y \\leq x \\leq \\infty \\quad \\text{(0 otherwise)}\\]
+                Here \\( \\frac{1}{\\mu} \\) is the mean time in the queue (typically this average is around 2 or 3 minutes but can be higher 
+                on certain times of the day and much higher at certain times of the year), and \\( \\frac{1}{\\lambda} \\) is the mean time talking to IRS staff.
                 You can adjust these parameters using the sliders below and observe how both the joint and marginal PDFs respond.
-                Be sure to utilize the buttons below the sliders to change between joint and marginal PDFs."),
+                Be sure to utilize the buttons below the sliders to change between joint and marginal PDFs.")),
               p(tags$strong('Guiding Question: How is the constraint of the domain reflected in the graph of the joint PDF and the contour plot?')),
               fluidRow(
                 column(
@@ -272,7 +274,7 @@ ui <- list(
                   wellPanel(
                     sliderInput(
                       inputId = 'lambdaSlider',
-                      label = p('Mean time talking to staff,', HTML("&#x03BB;"), '(mins)'),
+                      label = p('Mean time talking to staff, \\( \\lambda \\) (mins)'),
                       min = 5,
                       max = 30,
                       value = 15,
@@ -280,7 +282,7 @@ ui <- list(
                     br(),
                     sliderInput(
                       inputId = 'muSlider',
-                      label = p('Mean time in queue,', HTML("&#x03BC;"), '(mins)'),
+                      label = p('Mean time in queue, \\( \\mu \\) (mins)'),
                       min = 0.5,
                       max = 15,
                       value = 2,
@@ -308,7 +310,7 @@ ui <- list(
                   width = 8,
                   uiOutput("expoPlot"),
                   align = 'center',
-                  plotOutput("contourMap2", width = "60%"),
+                  plotOutput("contourMap2", width = "100%"),
                 )
               )
             )
@@ -324,9 +326,9 @@ ui <- list(
             tabPanel(
               title = 'Normal',
               br(),
-              p("This explore page features a 3D graph of the joint PDF of independent standard normal random variables X and Y with a conditional slice at a chosen value
+              p("This explore page features a 3D graph of the joint PDF of standard normal random variables X and Y with a conditional slice at a chosen value
           of", tags$em('x'), "cutting through it. The conditional PDF of Y given (X = ", tags$em('x'), ") is shown below.",
-                "The value of", HTML("&#x03C1;") ,"in the joint density and the positioning of the conditioning plane 
+                "The value of \\( \\rho \\) in the joint density and the positioning of the conditioning plane 
           can be adjusted using the sliders on the left. Also utilize the play button below the plane positioning slider to see a moving animation
             of the conditional slice."),
               p(tags$strong('Guiding Question: How does the conditional PDF respond when the conditoning
@@ -337,7 +339,7 @@ ui <- list(
                   wellPanel(
                     sliderInput(
                       inputId = 'corrVal',
-                      label = p('Correlation value,', HTML("&#x03C1;")),
+                      label = p('Correlation value, \\( \\rho \\)'),
                       min = -0.9,
                       max = 0.9,
                       value = 0,
@@ -384,7 +386,7 @@ ui <- list(
                     br(),
                     sliderInput(
                       inputId = 'lambdaSlider2',
-                      label = p('Mean time talking to staff,', HTML("&#x03BB;"), '(mins)'),
+                      label = p('Mean time talking to staff, \\( \\lambda \\) (mins)'),
                       min = 5,
                       max = 30,
                       value = 15,
@@ -392,7 +394,7 @@ ui <- list(
                     br(),
                     sliderInput(
                       inputId = 'muSlider2',
-                      label = p('Mean time in queue,', HTML("&#x03BC;"), '(mins)'),
+                      label = p('Mean time in queue, \\( \\mu \\) (mins)'),
                       min = 0.5,
                       max = 15,
                       value = 2,
@@ -428,6 +430,13 @@ ui <- list(
           tabName = "references",
           withMathJax(),
           h2("References"),
+          p(
+            class = "hangingindent",
+            "Anon. (2023). “Building on Filing Season 2023 Success, IRS Continues to 
+            Improve Service, Pursue High-Income Individuals Evading Taxes, Modernize 
+            Technology.”",tags$em('Internal Revenue Service.'), "Available at
+            https://www.irs.gov/newsroom/building-on-filing-season-2023-success-irs-continues-to-improve-service-pursue-high-income-individuals-evading-taxes-modernize-technology"
+          ),
           p(
             class = "hangingindent",
             "Bailey, E. (2015). shinyBS: Twitter bootstrap components for shiny.
@@ -496,18 +505,20 @@ server <- function(input, output, session) {
         session = session,
         type = "info",
         title = "Information",
-        text = "This App Template will help you get started building your own app"
+        text = "Explore joint and marginal PDF plots
+        on the Joint and Marginal page, and the interactive conditioning scenario on the 
+        Conditioning page."
       )
     }
   )
   
   observeEvent(
-    eventExpr = input$exploreButton,
+    eventExpr = input$prerequisitesButton,
     handlerExpr = {
       updateTabItems(
         session = session,
         inputId = "pages",
-        selected = "explore1"
+        selected = "prerequisites"
       )
     })
   
@@ -704,8 +715,8 @@ server <- function(input, output, session) {
     plotlyObj <- plot_ly(x = x, y = y, z = t(expo_z), type = 'surface', hoverinfo = 'x+y+z+text', hovertext = "Joint PDF", colorscale = 'Jet') %>%
       layout(scene = list(
         zaxis = list(title = "Joint Density"),
-        xaxis = list(title = 'total time (x)'),
-        yaxis = list(title = 'queue time (y)'),
+        xaxis = list(title = 'Total time (x)'),
+        yaxis = list(title = 'Queue time (y)'),
         camera = list(eye = list(x = 1.1, y = 2, z = 1.5))
       ),
       title = list(text = 'Joint PDF Plot',
@@ -725,7 +736,7 @@ server <- function(input, output, session) {
                         mapping = aes(x = y, y = z)) +
       labs(
         title = 'Marginal PDF of Y', 
-        x = "queue time (y)", y = "Marginal Density") +
+        x = "Queue time (y)", y = "Marginal Density") +
       geom_line(color = 'black', linewidth = 1.25) +
       theme_bw()
     ggplotObj + theme(
@@ -746,7 +757,7 @@ server <- function(input, output, session) {
                         mapping = aes(x = x, y = z)) +
       labs(
         title = 'Marginal PDF of X', 
-        x = "total time (x)", y = "Marginal Density") +
+        x = "Total time (x)", y = "Marginal Density") +
       geom_line(color = 'black', linewidth = 1.25) +
       theme_bw()
     ggplotObj + theme(
@@ -767,7 +778,7 @@ server <- function(input, output, session) {
     expo_grid$z <- expo_gamma(expo_grid$x, expo_grid$y, lambda = 1/input$lambdaSlider, mu = 1/input$muSlider)
     expo_z <- matrix(expo_grid$z, nrow = length(x), ncol = length(y))
     filled.contour(x,y,expo_z, asp = 1, color.palette = colorRampPalette(c("darkblue", "cyan", "yellow", "red")),
-                   plot.title = title(main = "Joint PDF Contour Plot", cex.main = 1.4, xlab = 'total time (x)', ylab = 'queue time (y)', cex.lab = 1.5),
+                   plot.title = title(main = "Joint PDF Contour Plot", cex.main = 1.4, xlab = 'Total time (x)', ylab = 'Queue time (y)', cex.lab = 1.5),
                    plot.axes = {axis(1, cex.axis = 1.3); axis(2, cex.axis = 1.3)})
   })
   
@@ -872,8 +883,8 @@ server <- function(input, output, session) {
                          hoverinfo = 'x+y+z+text', hovertext = "Joint PDF") %>%
       layout(scene = list(
         zaxis = list(title = "Joint Density", hoverformat = '.3f'),
-        xaxis = list(title = "total time (x)", hoverformat = '.3f'),
-        yaxis = list(title = "queue time (y)", hoverformat = '.3f'),
+        xaxis = list(title = "Total time (x)", hoverformat = '.3f'),
+        yaxis = list(title = "Queue time (y)", hoverformat = '.3f'),
         camera = list(eye = list(x = 1.1, y = 2, z = 1.5))
       ),
       dragmode = TRUE,
@@ -914,8 +925,8 @@ server <- function(input, output, session) {
                          hoverinfo = 'x+y+z+text', hovertext = "Joint PDF") %>%
       layout(scene = list(
         zaxis = list(title = "Joint Density", hoverformat = '.3f'),
-        xaxis = list(title = "total time (x)", hoverformat = '.3f'),
-        yaxis = list(title = "queue time (y)", hoverformat = '.3f'),
+        xaxis = list(title = "Total time (x)", hoverformat = '.3f'),
+        yaxis = list(title = "Queue time (y)", hoverformat = '.3f'),
         camera = list(eye = list(x = 1.1, y = 2, z = 1.5))
       ),
       dragmode = TRUE,
@@ -963,7 +974,7 @@ server <- function(input, output, session) {
                         mapping = aes(x = y, y = expo_z)) +
       labs(
         title = HTML('Conditional PDF of Y with X Equal to', input$condSliderPos2), 
-        x = "queue time (y)", y = "Conditional Density") +
+        x = "Queue time (y)", y = "Conditional Density") +
       geom_line(color = boastPalette[8], linewidth = 1.25) +
       theme_bw()
     ggplotObj + theme(
@@ -983,7 +994,7 @@ server <- function(input, output, session) {
                         mapping = aes(x = x, y = expo_z)) +
       labs(
         title = HTML('Conditional PDF of X with Y Equal to', input$condSliderPos2), 
-        x = "total time (x)", y = "Conditional Density") +
+        x = "Total time (x)", y = "Conditional Density") +
       geom_line(color = boastPalette[8], linewidth = 1.25) +
       theme_bw()
     ggplotObj + theme(
@@ -1021,8 +1032,10 @@ server <- function(input, output, session) {
   
   # captions
   output$joint_caption <- renderUI({
-    p('3D Joint PDF plot where the color represents the value of the joint density according to the color scale. Note that the marginal*
-                densities are scaled and would peak at 1/√(2π) ≈ 0.399')
+    withMathJax(
+      p('3D Joint PDF plot where the color represents the value of the joint density according to the color scale. Note that the marginal*
+                densities are scaled and would peak at \\( \\frac{1}{\\sqrt{2\\pi}} \\approx 0.399 \\)')
+    )
   })
   output$marginal_caption <- renderUI({
     p('Marginal PDF plot with the true marginal density (non-scaled)')

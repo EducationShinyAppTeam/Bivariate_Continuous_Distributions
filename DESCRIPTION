@@ -1,5 +1,5 @@
 Title: Bivariate Continuous Distributions
-ShortName: Sample App
+ShortName: Bivariate Distributions
 Date: 2024-09-01
 Lifecycle: experimental
 Authors@R: c(
@@ -15,8 +15,8 @@ LearningObjectives: c(
     "The student will learn how parameter adjustments affect independence between variables."
   )
 DisplayMode: Normal
-URL: https://psu-eberly.shinyapps.io/Sample_App
-BugReports: https://github.com/EducationShinyAppTeam/Sample_App/issues
+URL: https://psu-eberly.shinyapps.io/Bivariate_Continuous_Distributions
+BugReports: https://github.com/EducationShinyAppTeam/Bivariate_Continuous_Distributions/issues
 License: CC-BY-NC-SA-4.0
 Tags: simulation
 Type: Shiny
