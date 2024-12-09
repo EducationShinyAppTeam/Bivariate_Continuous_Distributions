@@ -207,7 +207,7 @@ ui <- list(
               br(),
               p('This explore page features the two-dimensional PDF function of two standard normal
             random variables as a 3D plot with some correlation value, \\( \\rho \\), that can be
-            adjusted using the slider. The joint PDF graph also features the non-standardized
+            adjusted using the slider. The joint PDF graph also features the standardized
             marginal PDFs of each random variable. The graph on the bottom is a contour plot that shows
             an aerial view of the joint distribution as the correlation slider
             is adjusted. Use the slider to adjust the correlation value and see how both plots respond,
@@ -244,9 +244,9 @@ ui <- list(
                 ),
                 column(
                   width = 8,
+                  align = 'center',
                   uiOutput("normPlot"),
                   uiOutput('page1Caption1'),
-                  align = 'center',
                   plotOutput("contourMap", width = "100%"),
                   p('Contour plot that depicts an aerial view of the joint distribution of X and Y')
                 )
@@ -309,7 +309,6 @@ ui <- list(
                 column(
                   width = 8,
                   uiOutput("expoPlot"),
-                  align = 'center',
                   plotOutput("contourMap2", width = "100%"),
                 )
               )
@@ -351,17 +350,16 @@ ui <- list(
                       min = -2.5,
                       max = 2.5,
                       value = 0,
-                      step = 0.1,
+                      step = 0.2,
                       animate = animationOptions(interval = 2000, playButton = icon('forward')))
                   ),
                   uiOutput('page2Caption1')
                 ),
                 column(
                   width = 8,
-                  uiOutput("condCorr"),
+                  plotlyOutput("condJointNorm"),
                   br(),
-                  align = 'center',
-                  plotOutput('condCorrPlane')
+                  plotOutput('condJointNormPlane')
                 )
               )
             ),
@@ -408,7 +406,6 @@ ui <- list(
                   width = 8,
                   uiOutput("condExpo"),
                   br(),
-                  align = 'center',
                   uiOutput('condExpoPlane')
                 )
               )
@@ -524,7 +521,7 @@ server <- function(input, output, session) {
   
   
   
-  ## Create Explore Page Graphs ----
+  ## Joint v Marginal Setup ----
   
   # create joint/marg functions
   joint_normal <- function(x,y) {
@@ -558,15 +555,21 @@ server <- function(input, output, session) {
       view('marg_y')
     })
   
-  output$normPlot <- renderUI({
-    if (view() == "3D") {
-      uiOutput('plotly_3d')
-    } else if (view() == 'marg_x') {
-      plotOutput('marginal_x')
-    } else if (view() == 'marg_y') {
-      plotOutput('marginal_y')
+  observeEvent(
+    eventExpr = view(),
+    handlerExpr = {
+      output$normPlot <- renderUI({
+        if (view() == "3D") {
+          plotlyOutput('plotly_3d')
+        } else if (view() == 'marg_x') {
+          plotOutput('marginal_x')
+        } else if (view() == 'marg_y') {
+          plotOutput('marginal_y')
+        }
+      })
     }
-  })
+  )
+
   
   # create xy grid then create grid and apply joint function
   x <- seq(-3, 3, length.out = 50)
@@ -576,9 +579,9 @@ server <- function(input, output, session) {
   z <- matrix(grid$z, nrow = length(x), ncol = length(y))
   
   
-  #### Joint vs Marginal Plots ----
+  #### Normal Section ----
   # 3d normal plot w/ correlation
-  output$plotly_3d <- renderUI({
+  output$plotly_3d <- renderPlotly({
     corr_grid <- expand.grid(x = x,y = y)
     corr_grid$z <- corr_joint(grid$x, grid$y, input$correlationSlider)
     corr_z <- matrix(corr_grid$z, nrow = length(x), ncol = length(y))
@@ -642,17 +645,34 @@ server <- function(input, output, session) {
   
   
   # normal - create contour map
-  output$contourMap <- renderPlot({
-    corr_grid <- expand.grid(x = x,y = y)
-    corr_grid$z <- corr_joint(grid$x, grid$y, input$correlationSlider)
-    corr_z <- matrix(corr_grid$z, nrow = length(x), ncol = length(y))
-    filled.contour(x,y,corr_z, asp = 1, color.palette = colorRampPalette(c("darkblue", "cyan", "yellow", "red")),
-                   plot.title = title(main = "Joint PDF Contour Plot", cex.main = 1.4, xlab = 'x', ylab = 'y', cex.lab = 1.5),
-                   plot.axes = {axis(1, cex.axis = 1.3); axis(2, cex.axis = 1.3)})
+  output$contourMap <- renderPlot(
+    expr = {
+      corr_grid <- expand.grid(x = x,y = y)
+      corr_grid$z <- corr_joint(grid$x, grid$y, input$correlationSlider)
+      ggplot(
+        data = corr_grid,
+        mapping = aes(x = x, y = y, z = z)
+      ) +
+        geom_contour_filled() + 
+        theme_bw() + 
+        coord_fixed() +
+        scale_y_continuous(expand = expansion()) + 
+        scale_x_continuous(expand = expansion()) +
+        labs(
+          title = 'Joint PDF Contour Plot',
+          x = 'x',
+          y = 'y'
+        ) +
+        theme(
+          plot.title = element_text(hjust = 0.5, size = 22),
+          axis.title.x = element_text(size = 20),
+          axis.title.y = element_text(size = 20),
+          axis.text = element_text(size = 18)
+        )
   })
   
   
-  #### Exponential tab ----
+  #### Exponential Section ----
   
   # create functions
   expo_gamma <- function(x,y,lambda,mu) {
@@ -693,19 +713,24 @@ server <- function(input, output, session) {
       view2('expo_marg_y')
     })
   
-  output$expoPlot <- renderUI({
-    if (view2() == "expo_3D") {
-      uiOutput('expo_3d')
-    } else if (view2() == 'expo_marg_x') {
-      plotOutput('expo_marginal_x')
-    } else if (view2() == 'expo_marg_y') {
-      plotOutput('expo_marginal_y')
+  observeEvent(
+    eventExpr = view2(),
+    handlerExpr = {
+      output$expoPlot <- renderUI({
+        if (view2() == "expo_3D") {
+          plotlyOutput('expo_3d')
+        } else if (view2() == 'expo_marg_x') {
+          plotOutput('expo_marginal_x')
+        } else if (view2() == 'expo_marg_y') {
+          plotOutput('expo_marginal_y')
+        }
+      })
     }
-  })
+  )
   
   
   # create 3d expo plot
-  output$expo_3d <- renderUI({
+  output$expo_3d <- renderPlotly({
     x <- seq(-1,15, length.out = 125)
     y <- seq(-1,15, length.out = 125) 
     expo_grid <- expand.grid(x = x,y = y)
@@ -784,8 +809,8 @@ server <- function(input, output, session) {
   
   
   
-  #### conditional normal  ----
-  output$condCorr <- renderUI({
+  #### Conditioning - Normal ----
+  output$condJointNorm <- renderPlotly({
     grid2 <- expand.grid(x = x,y = y)
     grid2$z <- corr_joint(grid2$x, grid2$y, p = input$corrVal)
     z <- matrix(grid2$z, nrow = length(x), ncol = length(y))
@@ -825,11 +850,11 @@ server <- function(input, output, session) {
                                              y = list(show = TRUE, color = 'grey30', width = 1, start = -3, end = 3, size = size_arg)
                                            ))
     config(plotlyObj, displaylogo = FALSE, displayModeBar = FALSE)
-  })
+  }) %>% bindCache(input$corrVal, input$condSliderPos)
   
   
   # normal cond plane subplot
-  output$condCorrPlane <- renderPlot({
+  output$condJointNormPlane <- renderPlot({
     x <- seq(-4.5, 4.5, length.out = 125)
     y <- seq(-4.5, 4.5, length.out = 125) 
     cond_z <- corr_joint(input$condSliderPos,y, p = input$corrVal) / marg(input$condSliderPos)
@@ -847,7 +872,7 @@ server <- function(input, output, session) {
     ) +
       scale_x_continuous(expand = expansion(mult = c(0,0), add = 0), limits = c(-4.5,4.5)) +
       scale_y_continuous(expand = expansion(mult = c(0, 0.01), add = c(0,0.03)))
-  })
+  }) %>% bindCache(input$corrVal, input$condSliderPos)
   
   
   # normal caption text
@@ -861,18 +886,18 @@ server <- function(input, output, session) {
   
   
   
-  #### Exponential Conditional Plots ----
+  #### Conditioning - Exponential ----
   # update cond plot based on selectinput conditioning x/y
   output$condExpo <- renderUI({
     if (input$condition_x_or_y == 'x') {
-      uiOutput('conditioning_x')
+      plotlyOutput('conditioning_x')
     } else if (input$condition_x_or_y == 'y') {
-      uiOutput('conditioning_y')
+      plotlyOutput('conditioning_y')
     }
   })
   
   # joint plot when conditioning x
-  output$conditioning_x <- renderUI({
+  output$conditioning_x <- renderPlotly({
     x <- seq(-1,15, length.out = 75)
     y <- seq(-1,15, length.out = 75) 
     expo_grid <- expand.grid(x = x,y = y)
@@ -914,7 +939,7 @@ server <- function(input, output, session) {
   })
   
   # joint plot when conditioning y
-  output$conditioning_y <- renderUI({
+  output$conditioning_y <- renderPlotly({
     x <- seq(-1,15, length.out = 75)
     y <- seq(-1,15, length.out = 75) 
     expo_grid <- expand.grid(x = x,y = y)
@@ -1007,6 +1032,7 @@ server <- function(input, output, session) {
   
   
   
+  #### Captions/Misc. ----
   # change slider input label based on conditioned variable
   output$slider_update <- renderUI({
     if (input$condition_x_or_y == 'x') {
