@@ -350,7 +350,7 @@ ui <- list(
                       min = -2.5,
                       max = 2.5,
                       value = 0,
-                      step = 0.2,
+                      step = 0.1,
                       animate = animationOptions(interval = 2000, playButton = icon('forward')))
                   ),
                   uiOutput('page2Caption1')
@@ -654,6 +654,7 @@ server <- function(input, output, session) {
         mapping = aes(x = x, y = y, z = z)
       ) +
         geom_contour_filled() + 
+        # needed to use 13 colors for each possible corr value since scale_fill_brewer didn't have the palette I needed
         scale_fill_manual(values = c('navy', 'blue', 'deepskyblue', 'cyan', 'mediumseagreen',
                                      'yellowgreen', 'yellow', 'darkorange', 'red',
                                      'darkred', 'firebrick', 'indianred', 'salmon', 'darkorange2')) +
