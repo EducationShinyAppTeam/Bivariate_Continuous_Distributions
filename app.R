@@ -207,7 +207,7 @@ ui <- list(
               br(),
               p('This explore page features the two-dimensional PDF function of two standard normal
             random variables as a 3D plot with some correlation value, \\( \\rho \\), that can be
-            adjusted using the slider. The joint PDF graph also features the standardized
+            adjusted using the slider. The joint PDF graph also features the unstandardized
             marginal PDFs of each random variable. The graph on the bottom is a contour plot that shows
             an aerial view of the joint distribution as the correlation slider
             is adjusted. Use the slider to adjust the correlation value and see how both plots respond,
@@ -309,7 +309,7 @@ ui <- list(
                 column(
                   width = 8,
                   uiOutput("expoPlot"),
-                  plotOutput("contourMap2", width = "100%"),
+                  plotOutput("contourMap2", width = "100%")
                 )
               )
             )
@@ -654,6 +654,9 @@ server <- function(input, output, session) {
         mapping = aes(x = x, y = y, z = z)
       ) +
         geom_contour_filled() + 
+        scale_fill_manual(values = c('navy', 'blue', 'deepskyblue', 'cyan', 'mediumseagreen',
+                                     'yellowgreen', 'yellow', 'darkorange', 'red',
+                                     'darkred', 'firebrick', 'indianred', 'salmon', 'darkorange2')) +
         theme_bw() + 
         coord_fixed() +
         scale_y_continuous(expand = expansion()) + 
@@ -796,15 +799,35 @@ server <- function(input, output, session) {
   
   
   # create expo contour map
-  output$contourMap2 <- renderPlot({
-    x <- seq(0,15, length.out = 125)
-    y <- seq(0,15, length.out = 125) 
-    expo_grid <- expand.grid(x = x,y = y)
-    expo_grid$z <- expo_gamma(expo_grid$x, expo_grid$y, lambda = 1/input$lambdaSlider, mu = 1/input$muSlider)
-    expo_z <- matrix(expo_grid$z, nrow = length(x), ncol = length(y))
-    filled.contour(x,y,expo_z, asp = 1, color.palette = colorRampPalette(c("darkblue", "cyan", "yellow", "red")),
-                   plot.title = title(main = "Joint PDF Contour Plot", cex.main = 1.4, xlab = 'Total time (x)', ylab = 'Queue time (y)', cex.lab = 1.5),
-                   plot.axes = {axis(1, cex.axis = 1.3); axis(2, cex.axis = 1.3)})
+  output$contourMap2 <- renderPlot(
+    expr = {
+      x <- seq(0,15, length.out = 125)
+      y <- seq(0,15, length.out = 125) 
+      expo_grid <- expand.grid(x = x,y = y)
+      expo_grid$z <- expo_gamma(expo_grid$x, expo_grid$y, lambda = 1/input$lambdaSlider, mu = 1/input$muSlider)
+      ggplot(
+        data = expo_grid,
+        mapping = aes(x = x, y = y, z = z)
+      ) +
+        geom_contour_filled() +
+        scale_fill_manual(values = c('navy', 'blue', 'deepskyblue', 'cyan', 'mediumseagreen',
+                                     'yellowgreen', 'yellow', 'darkorange', 'red',
+                                     'darkred', 'firebrick', 'indianred', 'salmon', 'darkorange2')) +
+        theme_bw() + 
+        coord_fixed() +
+        scale_y_continuous(expand = expansion()) + 
+        scale_x_continuous(expand = expansion()) +
+        labs(
+          title = 'Joint PDF Contour Plot',
+          x = 'x',
+          y = 'y'
+        ) +
+        theme(
+          plot.title = element_text(hjust = 0.5, size = 22),
+          axis.title.x = element_text(size = 20),
+          axis.title.y = element_text(size = 20),
+          axis.text = element_text(size = 18)
+        )
   })
   
   
@@ -1064,7 +1087,7 @@ server <- function(input, output, session) {
     )
   })
   output$marginal_caption <- renderUI({
-    p('Marginal PDF plot with the true marginal density (non-scaled)')
+    p('Marginal PDF plot scaled to true marginal density')
   })
   
   
